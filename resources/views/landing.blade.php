@@ -211,12 +211,11 @@
                             </div>
                         </div>
 
-                        <div class="bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-200/90 relative z-10 space-y-5">
-                            
-                            <div class="w-full h-85 sm:h-85 rounded-2xl overflow-hidden border-4 border-white shadow-lg">
-                                <img src="{{ asset('foto.jpeg') }}" alt="Foto Magang BPS Kota Malang" class="w-full h-full object-cover">
-                            </div>
-                        </div> 
+<div class="w-full h-85 sm:h-85 rounded-2xl overflow-hidden shadow-lg">
+    <img src="{{ asset('logo-bps-malang.png') }}" 
+         alt="Foto Magang BPS Kota Malang" 
+         class="w-full h-full object-cover">
+</div>
 
                     </div>
                 </div>
