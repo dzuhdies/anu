@@ -32,6 +32,15 @@ class ApplicationMember extends Model
         'is_leader' => 'boolean',
     ];
 
+    protected $appends = [
+        'pendaftaran_id',
+        'nama_lengkap',
+        'asal_univ',
+        'jurusan',
+        'no_hp',
+        'is_ketua',
+    ];
+
     public function application(): BelongsTo
     {
         return $this->belongsTo(InternshipApplication::class, 'application_id');

@@ -23,6 +23,12 @@ class Division extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = [
+        'nama_divisi',
+        'deskripsi',
+        'kuota',
+    ];
+
     public function applications(): HasMany
     {
         return $this->hasMany(InternshipApplication::class, 'division_id');
@@ -367,4 +373,159 @@ class Division extends Model
     {
         return $this->getMonthlyAvailability($startMonth, $totalMonths, $jumlahOrang);
     }
+
+    /**
+     * Kalender Kuota Divisi per hari dalam bulan tertentu (AJAX endpoint / UI Kalender).
+     */
+    public function getQuotaCalendar(int $year, int $month, ?int $excludeId = null): array
+    {
+        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endOfMonth = (clone $startOfMonth)->endOfMonth();
+        $monthStartStr = $startOfMonth->format('Y-m-d');
+        $monthEndStr = $endOfMonth->format('Y-m-d');
+
+        $quota = (int) $this->quota;
+
+        // Ambil pendaftaran approved yang overlap dengan bulan ini
+        $applicationsQuery = $this->applications()
+            ->where('status', 'approved')
+            ->where('start_date', '<=', $monthEndStr)
+            ->where('end_date', '>=', $monthStartStr)
+            ->with(['members', 'leader']);
+
+        if ($excludeId) {
+            $applicationsQuery->where('id', '!=', $excludeId);
+        }
+
+        $overlapApplications = $applicationsQuery->get();
+
+        // Ambil profil siswa aktif yang overlap dengan bulan ini
+        $overlapStudents = $this->studentProfiles()
+            ->whereHas('user', function ($q) {
+                $q->where('role', 'siswa');
+            })
+            ->where('start_date', '<=', $monthEndStr)
+            ->where('end_date', '>=', $monthStartStr)
+            ->with('user')
+            ->get();
+
+        $days = [];
+        $totalDays = (int) $endOfMonth->day;
+
+        for ($d = 1; $d <= $totalDays; $d++) {
+            $currentDate = Carbon::createFromDate($year, $month, $d)->startOfDay();
+            $dateStr = $currentDate->format('Y-m-d');
+            $occupiedToday = 0;
+            $countedUserIds = [];
+            $pesertas = [];
+
+            foreach ($overlapApplications as $app) {
+                $rawStart = $app->getRawOriginal('start_date') ?? $app->start_date;
+                $rawEnd = $app->getRawOriginal('end_date') ?? $app->end_date;
+                $appStart = Carbon::parse($rawStart)->format('Y-m-d');
+                $appEnd = Carbon::parse($rawEnd)->format('Y-m-d');
+                $leaderId = $app->leader_user_id;
+
+                if ($appStart <= $dateStr && $appEnd >= $dateStr) {
+                    $periodeFormatted = Carbon::parse($rawStart)->format('d/m/Y') . ' - ' . Carbon::parse($rawEnd)->format('d/m/Y');
+                    if ($app->members->isEmpty()) {
+                        $occupiedToday += 1;
+                        if ($leaderId) {
+                            $countedUserIds[] = $leaderId;
+                        }
+                        $pesertas[] = [
+                            'nama' => $app->leader?->name ?? 'Peserta Magang',
+                            'asal' => $app->institution ?? '-',
+                            'jurusan' => $app->major ?? '-',
+                            'kelompok' => $app->group_name,
+                            'periode' => $periodeFormatted,
+                        ];
+                    } else {
+                        foreach ($app->members as $member) {
+                            $occupiedToday += 1;
+                            if ($member->user_id) {
+                                $countedUserIds[] = $member->user_id;
+                            }
+                            $pesertas[] = [
+                                'nama' => $member->full_name ?? ($member->user?->name ?? 'Peserta Magang'),
+                                'asal' => $member->institution ?? ($app->institution ?? '-'),
+                                'jurusan' => $member->major ?? ($app->major ?? '-'),
+                                'kelompok' => $app->group_name,
+                                'periode' => $periodeFormatted,
+                            ];
+                        }
+                    }
+                }
+            }
+
+            foreach ($overlapStudents as $student) {
+                $rawStart = $student->getRawOriginal('start_date') ?? $student->start_date;
+                $rawEnd = $student->getRawOriginal('end_date') ?? $student->end_date;
+                $sStart = Carbon::parse($rawStart)->format('Y-m-d');
+                $sEnd = Carbon::parse($rawEnd)->format('Y-m-d');
+
+                if ($sStart <= $dateStr && $sEnd >= $dateStr) {
+                    if (!in_array($student->user_id, $countedUserIds)) {
+                        $occupiedToday += 1;
+                        if ($student->user_id) {
+                            $countedUserIds[] = $student->user_id;
+                        }
+                        $periodeFormatted = Carbon::parse($rawStart)->format('d/m/Y') . ' - ' . Carbon::parse($rawEnd)->format('d/m/Y');
+                        $pesertas[] = [
+                            'nama' => $student->full_name ?? ($student->user?->name ?? 'Siswa Magang'),
+                            'asal' => $student->institution ?? '-',
+                            'jurusan' => '-',
+                            'kelompok' => null,
+                            'periode' => $periodeFormatted,
+                        ];
+                    }
+                }
+            }
+
+            $sisa = max(0, $quota - $occupiedToday);
+
+            $status = 'tersedia';
+            if ($occupiedToday > $quota) {
+                $status = 'over_quota';
+            } elseif ($occupiedToday >= $quota) {
+                $status = 'penuh';
+            } elseif ($sisa <= 2 && $quota > 2) {
+                $status = 'terbatas';
+            }
+
+            $days[] = [
+                'tanggal' => $dateStr,
+                'hari' => $d,
+                'day_of_week' => $currentDate->dayOfWeek,
+                'is_today' => $currentDate->isToday(),
+                'kuota' => $quota,
+                'terisi' => $occupiedToday,
+                'sisa' => $sisa,
+                'status' => $status,
+                'pesertas' => $pesertas,
+            ];
+        }
+
+        return [
+            'year' => $year,
+            'month' => $month,
+            'month_name' => $startOfMonth->locale('id')->translatedFormat('F Y'),
+            'first_day_of_week' => $startOfMonth->dayOfWeek,
+            'total_days' => $totalDays,
+            'divisi' => [
+                'id' => $this->id,
+                'nama_divisi' => $this->name,
+                'name' => $this->name,
+                'kuota' => $quota,
+                'quota' => $quota,
+            ],
+            'days' => $days,
+        ];
+    }
+
+    public function getKalenderKuota(int $year, int $month, ?int $excludeId = null): array
+    {
+        return $this->getQuotaCalendar($year, $month, $excludeId);
+    }
 }
+

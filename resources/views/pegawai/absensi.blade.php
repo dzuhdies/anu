@@ -2358,10 +2358,17 @@
             activeSelectedPendaftaran = item;
 
             const bodyEl = document.getElementById('detailPendaftaranBody');
-            document.getElementById('detailPendaftaranTitle').textContent = `Permohonan: ${item.tipe === 'kelompok' ? item.nama_kelompok : (item.anggotas[0]?.nama_lengkap || '-')}`;
+            const members = item.anggotas || item.members || [];
+            const division = item.divisi || item.division || {};
+            const leader = item.ketua || item.leader || {};
+            const isKelompok = (item.tipe || item.type) === 'kelompok';
+            const groupName = item.nama_kelompok || item.group_name || '';
+            const leaderName = members[0]?.nama_lengkap || members[0]?.full_name || leader?.username || 'Peserta';
+
+            document.getElementById('detailPendaftaranTitle').textContent = `Permohonan: ${isKelompok ? groupName : leaderName}`;
 
             let anggotasHtml = '';
-            item.anggotas.forEach((anggota, idx) => {
+            members.forEach((anggota, idx) => {
                 let cvUrl = null;
                 if (anggota.cv_path) {
                     cvUrl = anggota.cv_path.startsWith('http') 
@@ -2376,20 +2383,25 @@
                         : (anggota.portofolio_path.startsWith('storage/') ? `{{ url('/') }}/${anggota.portofolio_path}` : `{{ asset('storage') }}/${anggota.portofolio_path}`);
                 }
 
+                const memberName = anggota.nama_lengkap || anggota.full_name || '-';
+                const memberUniv = anggota.asal_univ || anggota.institution || '-';
+                const memberMajor = anggota.jurusan || anggota.major || '-';
+                const memberPhone = anggota.no_hp || anggota.phone || '-';
+
                 anggotasHtml += `
                     <div class="p-3.5 rounded-xl border border-gray-100 bg-[#fbfcfd] space-y-2">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-full bg-gray-900 text-white font-bold text-xs flex items-center justify-center">${idx + 1}</span>
-                                <span class="font-bold text-gray-900 text-sm">${anggota.nama_lengkap}</span>
-                                ${idx === 0 && item.tipe === 'kelompok' ? '<span class="text-[10px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-full border border-blue-200">Pengaju Utama</span>' : ''}
+                                <span class="font-bold text-gray-900 text-sm">${memberName}</span>
+                                ${idx === 0 && isKelompok ? '<span class="text-[10px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-full border border-blue-200">Pengaju Utama</span>' : ''}
                             </div>
                             <span class="text-[11px] font-mono text-gray-400">@${anggota.user?.username || '-'}</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
-                            <div><span class="text-gray-400">Universitas:</span> <strong class="text-gray-800">${anggota.asal_univ || '-'}</strong></div>
-                            <div><span class="text-gray-400">Jurusan:</span> <strong class="text-gray-800">${anggota.jurusan || '-'}</strong></div>
-                            <div><span class="text-gray-400">WhatsApp/HP:</span> <strong class="text-gray-800">${anggota.no_hp || '-'}</strong></div>
+                            <div><span class="text-gray-400">Universitas:</span> <strong class="text-gray-800">${memberUniv}</strong></div>
+                            <div><span class="text-gray-400">Jurusan:</span> <strong class="text-gray-800">${memberMajor}</strong></div>
+                            <div><span class="text-gray-400">WhatsApp/HP:</span> <strong class="text-gray-800">${memberPhone}</strong></div>
                             <div><span class="text-gray-400">Email:</span> <strong class="text-gray-800">${anggota.user?.email || '-'}</strong></div>
                         </div>
                         <div class="pt-2 border-t border-gray-100 flex items-center gap-2">
@@ -2501,20 +2513,30 @@
                 `;
             }
 
+            const tglMulai = item.tanggal_mulai || item.start_date;
+            const tglSelesai = item.tanggal_selesai || item.end_date;
+            const tglMulaiSaran = item.tanggal_mulai_saran || item.suggested_start_date;
+            const tglSelesaiSaran = item.tanggal_selesai_saran || item.suggested_end_date;
+            const catatanRevisi = item.catatan_revisi_jadwal || item.reschedule_reason || '';
+            const divisiId = item.divisi_id || item.division_id;
+            const divisiNama = division.nama_divisi || division.name || '-';
+            const kuotaDivisi = division.kuota ?? division.quota ?? 0;
+            const totalAnggota = members.length || 1;
+
             bodyEl.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-gray-50 rounded-xl border border-gray-100 text-xs">
                     <div>
                         <span class="text-gray-400 uppercase tracking-wider block mb-0.5 font-semibold text-[10px]">Divisi Tujuan:</span>
                         <strong class="text-gray-900 text-sm flex items-center gap-1.5">
                             <i class="fa-solid fa-sitemap text-teal-600"></i>
-                            ${item.divisi?.nama_divisi || '-'}
+                            ${divisiNama}
                         </strong>
                     </div>
                     <div>
                         <span class="text-gray-400 uppercase tracking-wider block mb-0.5 font-semibold text-[10px]">Periode Magang:</span>
                         <strong class="text-gray-900 text-sm flex items-center gap-1.5">
                             <i class="fa-solid fa-calendar text-blue-600"></i>
-                            ${formatDateDMY(item.tanggal_mulai)} s.d. ${formatDateDMY(item.tanggal_selesai)}
+                            ${formatDateDMY(tglMulai)} s.d. ${formatDateDMY(tglSelesai)}
                         </strong>
                     </div>
                 </div>
@@ -2523,7 +2545,7 @@
 
                 <div>
                     <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                        Data Calon Peserta (${item.anggotas.length} Orang)
+                        Data Calon Peserta (${totalAnggota} Orang)
                     </h4>
                     <div class="space-y-2.5">
                         ${anggotasHtml}
@@ -2534,7 +2556,7 @@
             const footerEl = document.getElementById('detailPendaftaranFooter');
             if (footerEl) {
                 if (['pending', 'rescheduled'].includes(item.status)) {
-                    const titleText = item.tipe === 'kelompok' ? (item.nama_kelompok || 'Kelompok') : (item.anggotas[0]?.nama_lengkap || item.ketua?.username || 'Peserta');
+                    const titleText = isKelompok ? (groupName || 'Kelompok') : leaderName;
                     footerEl.innerHTML = `
                         <div class="flex items-center gap-2">
                             <button type="button" onclick="closeModal('pendaftaranDetailModal'); openRejectModal(${item.id}, '${titleText.replace(/'/g, "\\'")}')"
@@ -2542,12 +2564,12 @@
                                 <i class="fa-solid fa-xmark"></i>
                                 <span>Tolak</span>
                             </button>
-                            <button type="button" onclick="closeModal('pendaftaranDetailModal'); openRescheduleModal(${item.id}, '${titleText.replace(/'/g, "\\'")}', '${formatDateYMD(item.tanggal_mulai)}', '${formatDateYMD(item.tanggal_selesai)}', '${formatDateYMD(item.tanggal_mulai_saran)}', '${formatDateYMD(item.tanggal_selesai_saran)}', '${(item.catatan_revisi_jadwal || '').replace(/'/g, "\\'")}', ${item.divisi_id}, '${(item.divisi?.nama_divisi || '').replace(/'/g, "\\'")}', ${item.anggotas?.length || 1})"
+                            <button type="button" onclick="closeModal('pendaftaranDetailModal'); openRescheduleModal(${item.id}, '${titleText.replace(/'/g, "\\'")}', '${formatDateYMD(tglMulai)}', '${formatDateYMD(tglSelesai)}', '${formatDateYMD(tglMulaiSaran)}', '${formatDateYMD(tglSelesaiSaran)}', '${(catatanRevisi || '').replace(/'/g, "\\'")}', ${divisiId}, '${(divisiNama || '').replace(/'/g, "\\'")}', ${totalAnggota})"
                                 class="px-3 py-1.5 border border-amber-200 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold text-xs transition flex items-center gap-1 shadow-xs">
                                 <i class="fa-solid fa-calendar-days"></i>
                                 <span>Revisi Jadwal</span>
                             </button>
-                            <button type="button" onclick="closeModal('pendaftaranDetailModal'); confirmApprovePendaftaran(${item.id}, '${titleText.replace(/'/g, "\\'")}', '${formatDateDMY(item.tanggal_mulai)}', '${formatDateDMY(item.tanggal_selesai)}', ${item.anggotas?.length || 1}, ${item.divisi_id}, '${(item.divisi?.nama_divisi || '').replace(/'/g, "\\'")}', ${item.divisi?.kuota || 0})"
+                            <button type="button" onclick="closeModal('pendaftaranDetailModal'); confirmApprovePendaftaran(${item.id}, '${titleText.replace(/'/g, "\\'")}', '${formatDateDMY(tglMulai)}', '${formatDateDMY(tglSelesai)}', ${totalAnggota}, ${divisiId}, '${(divisiNama || '').replace(/'/g, "\\'")}', ${kuotaDivisi})"
                                 class="px-3 py-1.5 border border-emerald-200 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition flex items-center gap-1 shadow-xs">
                                 <i class="fa-solid fa-check"></i>
                                 <span>Terima (ACC)</span>
