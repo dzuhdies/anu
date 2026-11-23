@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\LogActivity;
+use App\Models\Logbook;
 use App\Models\User;
 use App\Models\Division;
 use App\Models\Building;

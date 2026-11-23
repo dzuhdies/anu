@@ -44,9 +44,13 @@ class AdminController extends Controller
 
         $pendingCount = InternshipApplication::where('status', 'pending')->count();
 
+        $logbookReviewEnabled = Setting::where('key', 'logbook_review_enabled')->value('value');
+        $logbookReviewEnabled = $logbookReviewEnabled === null || $logbookReviewEnabled === '1' || $logbookReviewEnabled === 'true';
+
         return view('admin.dashboard', compact(
             'siswaUsers', 'pegawaiUsers', 'allSiswas', 'adminUsers', 
-            'gedungs', 'jamTelat', 'jenisIzin', 'divisis', 'pendaftarans', 'pendingCount'
+            'gedungs', 'jamTelat', 'jenisIzin', 'divisis', 'pendaftarans', 'pendingCount',
+            'logbookReviewEnabled'
         ));
     }
 
@@ -356,6 +360,20 @@ class AdminController extends Controller
         }
 
         return back()->with('success', 'Jam telat berhasil diperbarui.');
+    }
+
+    public function toggleLogbook(Request $request)
+    {
+        $enabled = $request->has('enabled') ? '1' : '0';
+
+        Setting::updateOrCreate(
+            ['key' => 'logbook_review_enabled'],
+            ['value' => $enabled]
+        );
+
+        LogHelper::success($request, 'Toggle Fitur Logbook', 'Fitur logbook ' . ($enabled === '1' ? 'diaktifkan' : 'dinonaktifkan') . '.');
+
+        return back()->with('success', 'Fitur logbook berhasil ' . ($enabled === '1' ? 'diaktifkan' : 'dinonaktifkan') . '.');
     }
 
     // ================= DIVISI MANAGEMENT =================

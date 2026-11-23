@@ -24,5 +24,9 @@
 .DS_Store
 Thumbs.db
 
+# Nix / Direnv
+.direnv
+
+
 # Build
 /public/build

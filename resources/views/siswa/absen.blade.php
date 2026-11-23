@@ -90,6 +90,40 @@
         .btn-pulse-rose {
             animation: pulse-ring-rose 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
+
+        /* ================= LOGBOOK DATE PICKER (Access by KAI style) ================= */
+        .logbook-date-card {
+            background-color: #ffffff;
+            border-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .logbook-date-card .logbook-date-label {
+            color: #9ca3af;
+        }
+
+        .logbook-date-card .logbook-date-meta {
+            color: #6b7280;
+        }
+
+        .logbook-date-card[data-active="true"] {
+            background-color: #111827;
+            border-color: #111827;
+            color: #ffffff;
+            box-shadow: 0 10px 22px -10px rgba(17, 24, 39, 0.55);
+        }
+
+        .logbook-date-card[data-active="true"] .logbook-date-label {
+            color: #fdba74;
+        }
+
+        .logbook-date-card[data-active="true"] .logbook-date-meta {
+            color: #d1d5db;
+        }
+
+        .logbook-date-card:active {
+            transform: scale(0.97);
+        }
     </style>
     @include('partials.pwa')
 </head>
@@ -492,6 +526,8 @@
 
                 </div>
 
+                @include('siswa.partials.logbook-tab')
+
             </div>
         </main>
     </div>
@@ -511,6 +547,13 @@
                 class="transition-all active:scale-90 text-gray-400 hover:text-gray-600 flex items-center justify-center"
                 title="Riwayat Kehadiran">
                 <i class="fa-solid fa-calendar-days text-xl"></i>
+            </button>
+
+            <!-- TAB 3: LOGBOOK HARIAN -->
+            <button type="button" onclick="switchAbsenTab('logbook')" id="tap-btn-logbook"
+                class="transition-all active:scale-90 text-gray-400 hover:text-gray-600 flex items-center justify-center"
+                title="Logbook Harian">
+                <i class="fa-solid fa-book-open text-xl"></i>
             </button>
         </nav>
     </div>
@@ -842,47 +885,116 @@
 
         let currentActiveTab = 'absen';
 
-        function switchAbsenTab(tab) {
-            const viewAbsen = document.getElementById('view-absen');
-            const viewRiwayat = document.getElementById('view-riwayat');
-            const btnAbsen = document.getElementById('tap-btn-absen');
-            const btnRiwayat = document.getElementById('tap-btn-riwayat');
+        const absenTabButtons = {
+            absen: 'tap-btn-absen',
+            riwayat: 'tap-btn-riwayat',
+            logbook: 'tap-btn-logbook',
+        };
 
+        const absenTabViews = {
+            absen: 'view-absen',
+            riwayat: 'view-riwayat',
+            logbook: 'view-logbook',
+        };
+
+        function syncStudentTabUrl({ tab = null, date = null } = {}) {
+            if (!window.history || !window.history.replaceState) return;
+
+            const url = new URL(window.location.href);
+
+            if (tab) {
+                if (tab === 'absen') {
+                    url.searchParams.delete('tab');
+                } else {
+                    url.searchParams.set('tab', tab);
+                }
+            }
+
+            if (date) {
+                url.searchParams.set('tab', 'logbook');
+                url.searchParams.set('date', date);
+            }
+
+            window.history.replaceState({}, '', url);
+        }
+
+        function switchAbsenTab(tab) {
+            if (!absenTabViews[tab]) tab = 'absen';
             currentActiveTab = tab;
 
-            if (tab === 'absen') {
-                if (viewAbsen) {
-                    viewAbsen.style.display = 'block';
-                    viewAbsen.classList.remove('hidden');
-                }
-                if (viewRiwayat) {
-                    viewRiwayat.style.display = 'none';
-                    viewRiwayat.classList.add('hidden');
-                }
+            Object.entries(absenTabViews).forEach(([name, viewId]) => {
+                const view = document.getElementById(viewId);
+                if (!view) return;
 
-                btnAbsen?.classList.add('text-[#ff6b00]');
-                btnAbsen?.classList.remove('text-gray-400');
-
-                btnRiwayat?.classList.remove('text-[#ff6b00]');
-                btnRiwayat?.classList.add('text-gray-400');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else if (tab === 'riwayat') {
-                if (viewAbsen) {
-                    viewAbsen.style.display = 'none';
-                    viewAbsen.classList.add('hidden');
+                if (name === tab) {
+                    view.style.display = 'block';
+                    view.classList.remove('hidden');
+                } else {
+                    view.style.display = 'none';
+                    view.classList.add('hidden');
                 }
-                if (viewRiwayat) {
-                    viewRiwayat.style.display = 'block';
-                    viewRiwayat.classList.remove('hidden');
+            });
+
+            Object.entries(absenTabButtons).forEach(([name, buttonId]) => {
+                const button = document.getElementById(buttonId);
+                if (!button) return;
+
+                if (name === tab) {
+                    button.classList.add('text-[#ff6b00]');
+                    button.classList.remove('text-gray-400');
+                } else {
+                    button.classList.remove('text-[#ff6b00]');
+                    button.classList.add('text-gray-400');
                 }
+            });
 
-                btnRiwayat?.classList.add('text-[#ff6b00]');
-                btnRiwayat?.classList.remove('text-gray-400');
-
-                btnAbsen?.classList.remove('text-[#ff6b00]');
-                btnAbsen?.classList.add('text-gray-400');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            const scrollArea = document.querySelector('main');
+            if (scrollArea) {
+                scrollArea.scrollTo({ top: 0, behavior: 'smooth' });
             }
+
+            syncStudentTabUrl({ tab });
+        }
+
+        // ================= LOGBOOK DATE PICKER =================
+        function scrollLogbookDates(direction) {
+            const rail = document.getElementById('logbookDateRail');
+            if (!rail) return;
+            rail.scrollBy({ left: direction * 160, behavior: 'smooth' });
+        }
+
+        function selectLogbookDate(dateKey) {
+            document.querySelectorAll('[data-logbook-panel]').forEach((panel) => {
+                const isActive = panel.dataset.logbookPanel === dateKey;
+                panel.style.display = isActive ? 'block' : 'none';
+            });
+
+            document.querySelectorAll('[data-logbook-date]').forEach((card) => {
+                card.dataset.active = card.dataset.logbookDate === dateKey ? 'true' : 'false';
+            });
+
+            const activeCard = document.querySelector(`[data-logbook-date="${dateKey}"]`);
+            activeCard?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+
+            const activePanel = document.querySelector(`[data-logbook-panel="${dateKey}"]`);
+            activePanel?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+
+            syncStudentTabUrl({ tab: 'logbook', date: dateKey });
+        }
+
+        function bindLogbookCounters() {
+            document.querySelectorAll('[data-logbook-counter]').forEach((counter) => {
+                const input = document.getElementById(counter.dataset.logbookCounter);
+                if (!input) return;
+
+                const update = () => {
+                    const max = input.maxLength > 0 ? input.maxLength : 2000;
+                    counter.textContent = `${input.value.length}/${max}`;
+                };
+
+                input.addEventListener('input', update);
+                update();
+            });
         }
 
         function showProfileModal() {
@@ -1551,6 +1663,10 @@
 
             // Load Riwayat Bulan Ini
             fetchRiwayatData(currentRiwayatDate.getFullYear(), currentRiwayatDate.getMonth() + 1);
+
+            // Tab awal: presensi, riwayat, atau logbook (mis. setelah menyimpan logbook)
+            switchAbsenTab(@json($initialTab ?? 'absen'));
+            bindLogbookCounters();
 
             // Fetch Realtime Geolocation GPS awal
             fetchUserGps();
