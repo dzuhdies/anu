@@ -192,23 +192,20 @@
                                 <i class="fa-solid fa-house-laptop"></i>
                             </div>
                             <div class="text-left">
-                                <span class="font-bold block text-teal-950 text-xs">Izin Work From Home (WFH) Aktif Hari Ini</span>
-                                <span class="text-[11px] text-teal-700 leading-tight block mt-0.5">Pegawai telah menyetujui izin WFH Anda. Anda dapat melakukan presensi di luar area kantor BPS.</span>
+                                <span class="font-bold block text-teal-950 text-xs">Izin Work From Home Aktif Hari Ini</span>
+                                <span class="text-[11px] text-teal-700 leading-tight block mt-0.5">Anda dapat melakukan presensi di luar area kantor BPS.</span>
                             </div>
                         </div>
                     @endif
 
                     <!-- Banner Warning Luar Radius & Belum Ada Izin WFH (Dikontrol dinamis via JS) -->
                     <div id="outsideRadiusWarningBanner" class="hidden p-3.5 bg-rose-50 border border-rose-200 text-rose-900 rounded-2xl text-xs font-medium flex items-start gap-3 shadow-2xs">
-                        <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 text-sm mt-0.5">
-                            <i class="fa-solid fa-location-crosshairs"></i>
-                        </div>
                         <div class="text-left">
-                            <span class="font-bold block text-rose-950 text-xs">Presensi Dinonaktifkan (Di Luar Radius Kantor)</span>
+                            <span class="font-bold block text-rose-950 text-xs">Presensi Dinonaktifkan</span>
                             <span id="outsideRadiusWarningText" class="text-[11px] text-rose-700 leading-relaxed block mt-0.5">
                                 Anda berada di luar radius kantor BPS dan tidak memiliki izin WFH untuk hari ini. Tombol presensi tidak dapat digunakan.
                             </span>
-                        </div>
+                        </div> 
                     </div>
 
                     <!-- Kartu Aksi Utama Presensi (Tombol Absen Masuk / Pulang / Izin) -->
@@ -228,7 +225,7 @@
                                 <span class="text-[10px] text-emerald-100 mt-0.5 font-medium">Buka Kamera Selfie</span>
                             </button>
                             <p class="text-xs text-gray-500">
-                                Pastikan Anda berada di area kantor dan mengaktifkan GPS lokasi.
+                                Pastikan Anda berada di area kantor dan mengaktifkan GPS
                             </p>
 
                         @elseif($sudahMasuk && !$sudahPulang)
@@ -1412,7 +1409,7 @@
             if (isInside) {
                 // Di dalam area gedung: Hadir (WFO)
                 if (statusGedungEl) {
-                    statusGedungEl.textContent = 'Dalam Area BPS (WFO)';
+                    statusGedungEl.textContent = 'Dalam Area';
                     statusGedungEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
                 }
                 if (warningBanner) warningBanner.classList.add('hidden');
@@ -1424,8 +1421,8 @@
                 if (isWfhToday) {
                     // Diizinkan WFH oleh pegawai
                     if (statusGedungEl) {
-                        statusGedungEl.textContent = 'Luar Area (Izin WFH Aktif)';
-                        statusGedungEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200';
+                        statusGedungEl.textContent = 'Luar Area';
+                        statusGedungEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200';
                     }
                     if (warningBanner) warningBanner.classList.add('hidden');
 
@@ -1434,13 +1431,13 @@
                 } else {
                     // TIDAK BISA ABSEN (Button tidak bisa dipencet)
                     if (statusGedungEl) {
-                        statusGedungEl.textContent = 'Luar Area (Presensi Nonaktif)';
+                        statusGedungEl.textContent = 'Luar Area';
                         statusGedungEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200';
                     }
                     if (warningBanner) {
                         warningBanner.classList.remove('hidden');
                         if (warningText) {
-                            warningText.innerHTML = `Anda berada <strong>${jarak.toFixed(0)} meter</strong> di luar jangkauan gedung kantor BPS (Radius Maksimal: ${gedRadius}m) dan tidak memiliki izin WFH untuk hari ini. Anda hanya dapat melakukan presensi di lokasi kantor BPS.`;
+                            warningText.innerHTML = `Anda berada <strong>${jarak.toFixed(0)} meter</strong> di luar jangkauan Gedung BPS. Anda hanya dapat melakukan presensi di lokasi kantor BPS.`;
                         }
                     }
 
