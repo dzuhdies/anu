@@ -496,7 +496,7 @@
                 <div class="rounded-3xl overflow-hidden border border-slate-200 shadow-md bg-white p-3 space-y-3">
                     <div class="h-64 sm:h-72 w-full rounded-2xl overflow-hidden relative">
                         <iframe 
-                            src="https://maps.app.goo.gl/w1T9RHU9skxLTGLPA" 
+                            src="https://www.google.com/maps?q=Badan+Pusat+Statistik+Kota+Malang,+Jl.+Jend.+A.+Yani+No.+5,+Blimbing,+Kota+Malang&output=embed" 
                             width="100%" 
                             height="100%" 
                             style="border:0;" 
@@ -507,7 +507,7 @@
                         </iframe>
                     </div>
                     <div class="flex items-center justify-between px-2 pt-1 text-xs">
-                        <a href="https://maps.app.goo.gl/w1T9RHU9skxLTGLPA  " target="_blank" class="text-bps-600 hover:text-bps-800 font-bold text-xs inline-flex items-center gap-1">
+                        <a href="https://maps.app.goo.gl/w1T9RHU9skxLTGLPA" target="_blank" class="text-bps-600 hover:text-bps-800 font-bold text-xs inline-flex items-center gap-1">
                             <span>Buka di Google Maps</span>
                             <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                         </a>
