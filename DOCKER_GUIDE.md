@@ -1,6 +1,6 @@
 # Panduan Menjalankan Project dengan Docker
 
-## ⚡ Langkah Cepat (One-Command Setup)
+## One-Command Setup
 
 1. **Clone repository ini**:
    ```bash
