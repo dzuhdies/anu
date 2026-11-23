@@ -64,7 +64,7 @@
                     </span>
                     <input type="text" id="username" name="username" value="{{ old('username') }}"
                         class="block w-full pl-9 pr-4 py-2.5 bg-gray-50/70 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition"
-                        placeholder="contoh: budi_santoso"
+                        placeholder="Masukkan username"
                         required autofocus>
                 </div>
                 <p class="text-[11px] text-gray-400 mt-1">Digunakan untuk login ke sistem dan bergabung kelompok.</p>
@@ -78,7 +78,7 @@
                     </span>
                     <input type="email" id="email" name="email" value="{{ old('email') }}"
                         class="block w-full pl-9 pr-4 py-2.5 bg-gray-50/70 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition"
-                        placeholder="nama@email.com"
+                        placeholder="Example@gmail.com"
                         required>
                 </div>
             </div>
