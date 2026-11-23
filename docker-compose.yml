@@ -1,0 +1,68 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: magangbps_app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=magangbps
+      - DB_USERNAME=magang_user
+      - DB_PASSWORD=magang_secret
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - magang_network
+
+  db:
+    image: mysql:8.0
+    container_name: magangbps_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: magangbps
+      MYSQL_USER: magang_user
+      MYSQL_PASSWORD: magang_secret
+      MYSQL_ROOT_PASSWORD: root_secret_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - magang_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_secret_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: magangbps_pma
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: root_secret_password
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - magang_network
+
+networks:
+  magang_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
