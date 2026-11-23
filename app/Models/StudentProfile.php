@@ -86,6 +86,11 @@ class StudentProfile extends Model
         return $this->hasMany(Attendance::class, 'student_id');
     }
 
+    public function logbooks(): HasMany
+    {
+        return $this->hasMany(Logbook::class, 'student_id');
+    }
+
     // Backward-compatible relations
     public function gedung(): BelongsTo
     {

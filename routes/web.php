@@ -10,6 +10,8 @@ use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\InternshipApplicationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\LogbookController;
+use App\Http\Controllers\PegawaiLogbookController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\SiswaController;
@@ -80,6 +82,8 @@ Route::middleware(['auth', 'role:admin,pegawai'])->group(function () {
     // Pengaturan WFH Siswa (Admin & Pegawai)
     Route::post('/siswa/{id}/set-wfh', [EmployeeController::class, 'setWfh'])->name('siswa.set_wfh');
     Route::post('/pegawai/siswa/{id}/set-wfh', [EmployeeController::class, 'setWfh'])->name('pegawai.siswa.set_wfh');
+    Route::post('/logbook/toggle', [AdminController::class, 'toggleLogbook'])->name('logbook.toggle');
+    Route::post('/logbook/toggle', [AdminController::class, 'toggleLogbook'])->name('logbook.toggle');
 });
 
 Route::middleware(['auth', 'role:pegawai'])->group(function () {
@@ -88,6 +92,9 @@ Route::middleware(['auth', 'role:pegawai'])->group(function () {
     Route::get('/pegawai/kalender-kuota', [EmployeeController::class, 'kalenderKuota'])->name('pegawai.kalender.kuota');
     Route::get('/pegawai/rekap/export', [EmployeeController::class, 'exportRekap'])->name('pegawai.absensi.export');
     Route::get('/pegawai/export-rekap', [EmployeeController::class, 'exportRekap'])->name('pegawai.export.rekap');
+Route::get('/pegawai/logbook', [PegawaiLogbookController::class, 'index'])->name('pegawai.logbook.index');
+Route::post('/pegawai/logbook/{logbook}/approve', [PegawaiLogbookController::class, 'approve'])->name('pegawai.logbook.approve');
+Route::post('/pegawai/logbook/{logbook}/reject', [PegawaiLogbookController::class, 'reject'])->name('pegawai.logbook.reject');
     Route::get('/pegawai/siswa/{id}/riwayat-absensi', [EmployeeController::class, 'riwayatSiswa'])->name('pegawai.siswa.riwayat');
 });
 
@@ -97,6 +104,8 @@ Route::middleware(['auth', 'role:siswa'])->group(function () {
     Route::post('/siswa/absen-keluar', [StudentController::class, 'absenKeluar'])->name('siswa.absen.keluar');
     Route::get('/siswa/riwayat', [StudentController::class, 'getRiwayat'])->name('siswa.riwayat');
     Route::post('/siswa/absen-izin', [StudentController::class, 'absenIzin'])->name('siswa.absen.izin');
+    Route::get('/siswa/logbook', [LogbookController::class, 'index'])->name('siswa.logbook.index');
+    Route::post('/siswa/logbook', [LogbookController::class, 'store'])->name('siswa.logbook.store');
 });
 
 // Portal Pendaftaran Magang (Calon Peserta / Siswa)

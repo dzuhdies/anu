@@ -8,8 +8,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { 
-            font-family: 'Inter', sans-serif; 
+        body {
+            font-family: 'Inter', sans-serif;
             background-color: #ffffff;
             margin: 0;
             padding: 0;
@@ -21,7 +21,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
-        
+
         /* Container utama frame aplikasi */
         .app-container {
             width: 100vw;
@@ -189,7 +189,7 @@
 <body class="bg-white h-screen overflow-hidden">
 
     <div class="app-container">
-        
+
         <!-- ================= SIDEBAR (ADMIN STYLE) ================= -->
         <aside id="main-sidebar" class="w-[250px] bg-[#fafafa] border-r border-gray-100 flex flex-col shrink-0 fixed md:static inset-y-0 left-0 z-40 -translate-x-full md:translate-x-0 transition-transform duration-200">
             <!-- Brand / Logo BPS Kota Malang -->
@@ -220,7 +220,7 @@
                             <button onclick="showMainContent('absensi'); closeSidebarMobile();" id="side-nav-absensi"
                                 class="sidebar-nav-link w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
                                 <span class="flex items-center gap-3"><i class="fa-solid fa-clipboard-user w-4 text-center"></i> Rekap Presensi</span>
-                                
+
                             </button>
                         </li>
                         <li>
@@ -236,7 +236,36 @@
                                 <span class="flex items-center gap-3"><i class="fa-solid fa-calendar-days w-4 text-center"></i> Kalender Sisa Kuota</span>
                             </button>
                         </li>
+                        <li>
+                            <button onclick="showMainContent('logbook'); closeSidebarMobile();" id="side-nav-logbook"
+                                class="sidebar-nav-link w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                                <span class="flex items-center gap-3"><i class="fa-solid fa-book-open w-4 text-center text-amber-600"></i> Logbook Magang</span>
+                                @if(($logbookPendingCount ?? 0) > 0)
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500 text-white">{{ $logbookPendingCount }}</span>
+                                @endif
+                            </button>
+                        </li>
                     </ul>
+                </div>
+
+                <!-- Group: Konfigurasi -->
+                <div>
+                    <h3 class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Konfigurasi</h3>
+                    <div class="p-3 bg-white border border-gray-100 rounded-xl">
+                        <form method="POST" action="{{ route('logbook.toggle') }}" class="flex items-center justify-between gap-2">
+                            @csrf
+                            <div>
+                                <span class="text-[11px] font-semibold text-gray-800 block">Review Logbook (Pegawai)</span>
+                                <span class="text-[10px] text-gray-400">{{ ($logbookReviewEnabled ?? true) ? 'Aktif' : 'Nonaktif' }}</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="enabled" value="1" class="sr-only peer"
+                                    {{ ($logbookReviewEnabled ?? true) ? 'checked' : '' }}
+                                    onchange="this.form.submit()">
+                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-500 transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+                            </label>
+                        </form>
+                    </div>
                 </div>
 
                 <!-- Group: Informasi Penugasan -->
@@ -246,14 +275,14 @@
                         <div>
                             <span class="text-gray-400 block text-[10px] uppercase font-semibold">Divisi Penugasan</span>
                             <span class="font-bold text-gray-800 flex items-center gap-1.5 mt-0.5">
-                            
+
                                 {{ $divisiPegawai ? $divisiPegawai->nama_divisi : 'Semua Divisi' }}
                             </span>
                         </div>
                         <div class="pt-2 border-t border-gray-50">
                             <span class="text-gray-400 block text-[10px] uppercase font-semibold">Lokasi Gedung</span>
                             <span class="font-medium text-gray-700 flex items-center gap-1.5 mt-0.5">
-                            
+
                                 {{ $gedung->nama ?? 'BPS Kota Malang' }}
                             </span>
                         </div>
@@ -295,7 +324,7 @@
 
         <!-- ================= MAIN CONTENT (ADMIN STYLE) ================= -->
         <main class="flex-1 flex flex-col bg-[#fbfcfd] overflow-hidden">
-            
+
             <!-- Top Header -->
             <header class="h-16 flex items-center justify-between px-4 sm:px-8 border-b border-gray-100 border-dashed shrink-0 bg-white">
                 <!-- Breadcrumbs & Mobile Trigger -->
@@ -415,7 +444,7 @@
 
                 <!-- ================= VIEW 1: PENDAFTARAN & SELEKSI ================= -->
                 <div id="main-content-pendaftaran" class="main-content-view space-y-6">
-                    
+
                     <!-- Stats Cards Pendaftaran -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div class="card p-4">
@@ -638,10 +667,10 @@
 
                     <!-- Layout Presensi: 1/3 (Col-4) Mini Kalender & Filter, 2/3 (Col-8) Tabel Kehadiran -->
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        
+
                         <!-- Left Column: Kalender Interaktif & Filter Form -->
                         <div class="lg:col-span-4 space-y-5">
-                            
+
                             <!-- Card Mini Calendar -->
                             <div class="card p-5">
                                 <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
@@ -736,7 +765,7 @@
 
                         <!-- Right Column: Table Rekap Presensi -->
                         <div class="lg:col-span-8 card overflow-hidden">
-                            
+
                             <div class="p-4 sm:p-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-[#fafafa]">
                                 <div>
                                     <h3 class="text-sm font-bold text-gray-900">
@@ -1196,7 +1225,7 @@
                                 @if($pegawai && $pegawai->divisi_id)
                                     <!-- Pegawai hanya bertugas di 1 divisi tertentu -->
                                     <div class="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-900 text-xs font-semibold shadow-2xs">
-                                        
+
                                         <input type="hidden" id="pegawaiKalenderDivisiSelect" value="{{ $pegawai->divisi_id }}">
                                     </div>
                                 @else
@@ -1294,9 +1323,11 @@
 
                 </div>
 
-            </div>
+                <div id="main-content-logbook" class="main-content-view hidden space-y-6">
+                    @include('pegawai.partials.logbook-tab')
+                </div>
 
-        </main>
+            </div>
 
     </div>
 
@@ -2074,11 +2105,11 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="closeModal('modalUbahPeriodePegawai')" 
+                    <button type="button" onclick="closeModal('modalUbahPeriodePegawai')"
                         class="px-3.5 py-2 border border-gray-200 text-gray-600 rounded-lg font-medium text-xs hover:bg-gray-50 transition">
                         Batal
                     </button>
-                    <button type="submit" 
+                    <button type="submit"
                         class="px-4 py-2 bg-gray-900 hover:bg-black text-white rounded-lg font-semibold text-xs shadow-xs transition flex items-center gap-1.5">
                         <i class="fa-solid fa-check text-xs"></i>
                         <span>Simpan Perubahan</span>
@@ -2220,7 +2251,8 @@
                     'pendaftaran': 'Seleksi Pendaftaran Magang',
                     'absensi': 'Rekap Presensi & Kehadiran Siswa',
                     'siswa': 'Daftar Siswa Magang Aktif',
-                    'kalender': 'Kalender Sisa Kuota Divisi'
+                    'kalender': 'Kalender Sisa Kuota Divisi',
+                    'logbook': 'Review Logbook Siswa'
                 };
                 breadcrumbEl.textContent = titles[contentToShow] || 'Portal Pegawai';
             }
@@ -2442,15 +2474,15 @@
             members.forEach((anggota, idx) => {
                 let cvUrl = null;
                 if (anggota.cv_path) {
-                    cvUrl = anggota.cv_path.startsWith('http') 
-                        ? anggota.cv_path 
+                    cvUrl = anggota.cv_path.startsWith('http')
+                        ? anggota.cv_path
                         : (anggota.cv_path.startsWith('storage/') ? `{{ url('/') }}/${anggota.cv_path}` : `{{ asset('storage') }}/${anggota.cv_path}`);
                 }
 
                 let portoUrl = null;
                 if (anggota.portofolio_path) {
-                    portoUrl = anggota.portofolio_path.startsWith('http') 
-                        ? anggota.portofolio_path 
+                    portoUrl = anggota.portofolio_path.startsWith('http')
+                        ? anggota.portofolio_path
                         : (anggota.portofolio_path.startsWith('storage/') ? `{{ url('/') }}/${anggota.portofolio_path}` : `{{ asset('storage') }}/${anggota.portofolio_path}`);
                 }
 
@@ -2522,8 +2554,8 @@
             } else if (item.status === 'resignation_requested') {
                 let buktiBtn = '';
                 if (item.bukti_undur_diri) {
-                    let buktiUrl = item.bukti_undur_diri.startsWith('http') 
-                        ? item.bukti_undur_diri 
+                    let buktiUrl = item.bukti_undur_diri.startsWith('http')
+                        ? item.bukti_undur_diri
                         : (item.bukti_undur_diri.startsWith('storage/') ? `{{ url('/') }}/${item.bukti_undur_diri}` : `{{ asset('storage') }}/${item.bukti_undur_diri}`);
                     buktiBtn = `
                         <div class="pt-2">
@@ -3367,7 +3399,7 @@
             document.getElementById('ubahPeriodeDivisiSiswa').textContent = 'Divisi: ' + (data.divisi || '-');
             document.getElementById('ubahPeriodeTanggalMulaiSiswa').textContent = 'Tanggal Mulai: ' + (data.tanggal_mulai || '-');
             document.getElementById('ubahPeriodeTanggalSelesaiSiswa').textContent = 'Tanggal Selesai Saat Ini: ' + (data.tanggal_selesai || '-');
-            
+
             const rawEnd = data.tanggal_selesai || '';
             let dateVal = '';
             if (rawEnd.includes('/')) {

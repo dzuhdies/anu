@@ -152,6 +152,73 @@ class EmployeeController extends Controller
         $pendingCount = $pendaftarans->where('status', 'pending')->count();
         $divisis = Division::where('is_active', true)->orderBy('name')->get();
 
+        // Logbook: jumlah yang menunggu review (dibatasi divisi pegawai bila ada)
+        $logbookQuery = \App\Models\Logbook::query();
+        if ($employee && $employee->division_id) {
+            $logbookQuery->whereHas('student', fn ($q) => $q->where('division_id', $employee->division_id));
+        }
+        $logbookPendingCount = (clone $logbookQuery)->where('status', \App\Models\Logbook::STATUS_PENDING)->count();
+        $logbookReviewEnabled = \App\Models\Setting::where('key', 'logbook_review_enabled')->value('value');
+        $logbookReviewEnabled = $logbookReviewEnabled === null || $logbookReviewEnabled === '1' || $logbookReviewEnabled === 'true';
+
+        // Data review logbook (untuk tab Logbook Magang)
+        $logbookBase = (clone $logbookQuery);
+        if ($request->filled('status')) {
+            $logbookBase->where('status', $request->status);
+        }
+        // Filter tanggal: dukung rentang (dari/ke) seperti Rekap Presensi, fallback tanggal tunggal
+        $logDari = $request->filled('dari') ? $request->dari : ($request->filled('tanggal') ? $request->tanggal : null);
+        $logKe = $request->filled('ke') ? $request->ke : ($request->filled('tanggal') ? $request->tanggal : null);
+        if ($logDari && $logKe) {
+            if ($logDari > $logKe) { $tmp = $logDari; $logDari = $logKe; $logKe = $tmp; }
+            $logbookBase->whereBetween('date', [$logDari, $logKe]);
+        } elseif ($logDari) {
+            $logbookBase->whereDate('date', $logDari);
+        } elseif ($logKe) {
+            $logbookBase->whereDate('date', $logKe);
+        }
+        if ($request->filled('q')) {
+            $term = '%' . trim($request->q) . '%';
+            $logbookBase->whereHas('student', fn ($q) => $q
+                ->where('full_name', 'like', $term)
+                ->orWhere('institution', 'like', $term));
+        }
+
+        $logbooks = (clone $logbookBase)
+            ->with(['student.division', 'student.building', 'reviewer'])
+            ->orderByDesc('date')
+            ->orderByDesc('created_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        $logbookStats = [
+            'total' => (clone $logbookQuery)->count(),
+            'pending' => (clone $logbookQuery)->where('status', \App\Models\Logbook::STATUS_PENDING)->count(),
+            'approved' => (clone $logbookQuery)->where('status', \App\Models\Logbook::STATUS_APPROVED)->count(),
+            'rejected' => (clone $logbookQuery)->where('status', \App\Models\Logbook::STATUS_REJECTED)->count(),
+            'today' => (clone $logbookQuery)->whereDate('date', \Carbon\Carbon::today())->count(),
+        ];
+
+        $logbookPayload = $logbooks->getCollection()->map(function (\App\Models\Logbook $logbook) {
+            return [
+                'id' => $logbook->id,
+                'student' => $logbook->student->full_name ?? 'Peserta Magang',
+                'institution' => $logbook->student->institution ?: '-',
+                'division' => $logbook->student->division->nama_divisi ?? '-',
+                'date' => $logbook->date->locale('id')->translatedFormat('l, d F Y'),
+                'activity' => $logbook->activity,
+                'result' => $logbook->result,
+                'status' => $logbook->status,
+                'status_label' => $logbook->status_label,
+                'status_badge' => $logbook->status_badge,
+                'review_note' => $logbook->review_note,
+                'reviewer' => $logbook->reviewer->username ?? null,
+                'reviewed_at' => $logbook->reviewed_at?->locale('id')->translatedFormat('d M Y, H:i') . ' WIB',
+                'approve_url' => route('pegawai.logbook.approve', $logbook),
+                'reject_url' => route('pegawai.logbook.reject', $logbook),
+            ];
+        })->values();
+
         $activeTab = $request->input('tab', ($dariInput || $keInput || $tanggal || $bulan) ? 'absensi' : 'pendaftaran');
 
         $logMessage = 'Pegawai melihat dashboard presensi & seleksi';
@@ -192,7 +259,12 @@ class EmployeeController extends Controller
             'pendaftarans',
             'pendingCount',
             'divisis',
-            'activeTab'
+            'activeTab',
+            'logbookPendingCount',
+            'logbookReviewEnabled',
+            'logbooks',
+            'logbookStats',
+            'logbookPayload'
         ));
     }
 

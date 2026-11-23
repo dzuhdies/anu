@@ -277,6 +277,20 @@
                                 <span class="text-xs text-gray-400">{{ $jenisIzin->count() }}</span>
                             </button>
                         </li>
+                        <li class="px-1 pt-1">
+                            <form method="POST" action="{{ route('logbook.toggle') }}" class="flex items-center justify-between gap-2 px-2 py-1.5">
+                                @csrf
+                                <span class="text-xs text-gray-600 flex items-center gap-2">
+                                    <i class="fa-solid fa-book-open text-amber-600 text-[11px]"></i> Review Logbook (Pegawai)
+                                </span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" name="enabled" value="1" class="sr-only peer"
+                                        {{ ($logbookReviewEnabled ?? true) ? 'checked' : '' }}
+                                        onchange="this.form.submit()">
+                                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-500 transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+                                </label>
+                            </form>
+                        </li>
                     </ul>
                 </div>
 
