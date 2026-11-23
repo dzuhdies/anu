@@ -428,51 +428,6 @@
                         <form method="POST" action="{{ route('pendaftaran.store') }}" id="formPendaftaran" class="space-y-6">
                             @csrf
 
-                            <!-- 1. Ringkasan Biodata Pendaftar -->
-                            <div class="card p-5 bg-white space-y-3">
-                                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
-                                            <i class="fa-solid fa-user-check"></i>
-                                        </div>
-                                        <div>
-                                            <h4 class="text-xs font-bold text-gray-900">Biodata Pendaftar (Akun Anda)</h4>
-                                            <p class="text-[11px] text-gray-400">Data ini otomatis disubmit dari profil biodata Anda</p>
-                                        </div>
-                                    </div>
-                                    <button type="button" onclick="switchTab('profile')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                                        <i class="fa-solid fa-pen-to-square text-[11px]"></i> Edit Profil
-                                    </button>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                        <span class="text-gray-400 text-[10px] uppercase font-semibold block">Nama Lengkap</span>
-                                        <strong class="text-gray-900 block truncate">{{ $pesertaProfile->nama_lengkap }}</strong>
-                                    </div>
-                                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                        <span class="text-gray-400 text-[10px] uppercase font-semibold block">Asal Instansi/Univ</span>
-                                        <strong class="text-gray-900 block truncate">{{ $pesertaProfile->asal_univ }}</strong>
-                                    </div>
-                                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                        <span class="text-gray-400 text-[10px] uppercase font-semibold block">Jurusan</span>
-                                        <strong class="text-gray-900 block truncate">{{ $pesertaProfile->jurusan }}</strong>
-                                    </div>
-                                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between">
-                                        <div>
-                                            <span class="text-gray-400 text-[10px] uppercase font-semibold block">Berkas CV</span>
-                                            <span class="text-emerald-600 font-bold flex items-center gap-1">
-                                                <i class="fa-solid fa-circle-check text-[11px]"></i> Siap Dikirim
-                                            </span>
-                                        </div>
-                                        <a href="{{ asset('storage/' . $pesertaProfile->cv_path) }}" target="_blank" class="text-gray-400 hover:text-rose-600 text-xs" title="Lihat Berkas CV">
-                                            <i class="fa-solid fa-file-pdf text-base"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 2. Pemilihan Divisi & Kuota Terpadu -->
                             <div class="card p-5 bg-white space-y-4">
                                 <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                                     <div class="flex items-center gap-2.5">
@@ -1107,14 +1062,33 @@
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
+                                <div id="univInputWrapper" class="relative">
                                     <label class="block text-xs font-semibold text-gray-700 mb-1">
                                         Asal Universitas / Sekolah / Instansi <span class="text-rose-500">*</span>
                                     </label>
-                                    <input type="text" name="asal_univ" required
-                                        value="{{ old('asal_univ', $pesertaProfile?->asal_univ) }}"
-                                        placeholder="Contoh: Universitas Indonesia"
-                                        class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition">
+                                    <div class="relative">
+                                        <input type="text" name="asal_univ" id="inputAsalUniv" required
+                                            autocomplete="off"
+                                            value="{{ old('asal_univ', $pesertaProfile?->asal_univ) }}"
+                                            placeholder="Ketik & pilih Universitas/Sekolah/Instansi "
+                                            class="w-full pl-3 pr-8 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition">
+                                        <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-gray-400">
+                                            <i id="univSearchSpinner" class="fa-solid fa-circle-notch fa-spin text-teal-600 hidden"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- Peringatan jika tidak memilih dari hasil pencarian -->
+                                    <p id="univValidationWarning" class="hidden text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
+                                        <i class="fa-solid fa-circle-exclamation text-xs"></i>
+                                        <span>Wajib memilih salah satu dari daftar rekomendasi</span>
+                                    </p>
+
+                                    <!-- Dropdown Hasil Pencarian Universitas (Maks. 5 Hasil) -->
+                                    <div id="univDropdownMenu" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden text-xs">
+                                        <div id="univDropdownList" class="max-h-60 overflow-y-auto divide-y divide-gray-50">
+                                            <!-- Diisi secara dinamis via JavaScript -->
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -2188,8 +2162,225 @@
             });
         }
 
+        // ================= 10. AUTOCOMPLETE ASAL UNIVERSITAS (API UNIV) =================
+        let univDebounceTimer = null;
+        let univAbortController = null;
+
+        function initUniversitasAutocomplete() {
+            const input = document.getElementById('inputAsalUniv');
+            const menu = document.getElementById('univDropdownMenu');
+            const list = document.getElementById('univDropdownList');
+            const spinner = document.getElementById('univSearchSpinner');
+            const icon = document.getElementById('univSearchIcon');
+            const warning = document.getElementById('univValidationWarning');
+
+            if (!input || !menu || !list) return;
+
+            let currentConfirmedUniv = input.value.trim();
+            let isUnivConfirmed = currentConfirmedUniv.length > 0;
+            let hasValidationError = false;
+
+            function showWarning(msg) {
+                hasValidationError = true;
+                if (warning) {
+                    if (msg) {
+                        const span = warning.querySelector('span');
+                        if (span) span.textContent = msg;
+                    }
+                    warning.classList.remove('hidden');
+                }
+                input.classList.add('border-rose-400', 'bg-rose-50/20');
+            }
+
+            function clearWarning() {
+                hasValidationError = false;
+                if (warning) {
+                    warning.classList.add('hidden');
+                }
+                input.classList.remove('border-rose-400', 'bg-rose-50/20');
+            }
+
+            function validateUnivSelection() {
+                const currentVal = input.value.trim();
+                // 1. Jika user mengetik tetapi tidak mengklik hasil dropdown
+                if (currentVal.length > 0 && (!isUnivConfirmed || currentVal !== currentConfirmedUniv)) {
+                    input.value = '';
+                    currentConfirmedUniv = '';
+                    isUnivConfirmed = false;
+                    showWarning('Wajib memilih salah satu dari daftar rekomendasi');
+                } 
+                // 2. Jika input kosong dan sedang ada error validasi, jangan hilangkan alertnya!
+                else if (currentVal.length === 0 && hasValidationError) {
+                    showWarning('Wajib memilih salah satu dari daftar rekomendasi');
+                } 
+                // 3. Hanya bersihkan warning jika benar-benar sudah dikonfirmasi dari dropdown
+                else if (isUnivConfirmed && currentVal === currentConfirmedUniv && currentVal.length > 0) {
+                    clearWarning();
+                }
+                menu.classList.add('hidden');
+            }
+
+            // Cegah blur premature saat mousedown pada menu dropdown
+            menu.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+
+            // Tunggu 1 kalimat / kata dulu baru search (debounce 500ms)
+            input.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                clearTimeout(univDebounceTimer);
+
+                if (query !== currentConfirmedUniv) {
+                    isUnivConfirmed = false;
+                }
+
+                if (!query || query.length < 3) {
+                    menu.classList.add('hidden');
+                    return;
+                }
+
+                // Debounce 500ms agar menunggu selesai mengetik kata/kalimat
+                univDebounceTimer = setTimeout(() => {
+                    executeSearchUniversitas(query);
+                }, 500);
+            });
+
+            // Saat input kehilangan fokus (blur), hapus jika tidak dipilih dari hasil
+            input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    validateUnivSelection();
+                }, 150);
+            });
+
+            // Enter key langsung search atau pilih opsi teratas
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const firstBtn = list.querySelector('button[data-univ]');
+                    if (!menu.classList.contains('hidden') && firstBtn) {
+                        e.preventDefault();
+                        firstBtn.click();
+                        return;
+                    }
+                    const query = input.value.trim();
+                    if (query.length >= 3) {
+                        e.preventDefault();
+                        clearTimeout(univDebounceTimer);
+                        executeSearchUniversitas(query);
+                    }
+                } else if (e.key === 'Escape') {
+                    validateUnivSelection();
+                }
+            });
+
+            // Klik item hasil pencarian
+            list.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-univ]');
+                if (btn) {
+                    const univName = btn.getAttribute('data-univ');
+                    input.value = univName;
+                    currentConfirmedUniv = univName;
+                    isUnivConfirmed = true;
+                    clearWarning();
+                    menu.classList.add('hidden');
+                }
+            });
+
+            // Tutup dropdown dan validasi saat klik di luar
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#univInputWrapper')) {
+                    validateUnivSelection();
+                }
+            });
+
+            // Validasi pada saat submit form profil
+            const profileForm = input.closest('form');
+            if (profileForm) {
+                profileForm.addEventListener('submit', (e) => {
+                    const currentVal = input.value.trim();
+                    if (!isUnivConfirmed || currentVal !== currentConfirmedUniv || currentVal.length === 0) {
+                        e.preventDefault();
+                        input.value = '';
+                        currentConfirmedUniv = '';
+                        isUnivConfirmed = false;
+                        showWarning('Wajib memilih salah satu dari daftar rekomendasi');
+                        input.focus();
+                    }
+                });
+            }
+
+            async function executeSearchUniversitas(q) {
+                if (!q || q.length < 3) {
+                    menu.classList.add('hidden');
+                    return;
+                }
+
+                if (univAbortController) {
+                    univAbortController.abort();
+                }
+                univAbortController = new AbortController();
+
+                spinner?.classList.remove('hidden');
+                icon?.classList.add('hidden');
+
+                list.innerHTML = `
+                    <div class="p-3 text-center text-gray-400 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-notch fa-spin text-teal-600"></i>
+                        <span>Mencari universitas...</span>
+                    </div>
+                `;
+                menu.classList.remove('hidden');
+
+                try {
+                    const url = `https://univ.annova.my.id/names?q=${encodeURIComponent(q)}&limit=5`;
+                    const res = await fetch(url, {
+                        signal: univAbortController.signal,
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (!res.ok) throw new Error('Status respon tidak berhasil: ' + res.status);
+                    const data = await res.json();
+                    
+                    // Batasi maksimal 5 hasil
+                    const results = (data.names || []).slice(0, 5);
+
+                    if (results.length === 0) {
+                        list.innerHTML = `
+                            <div class="p-3 text-center text-gray-500">
+                                <span>Tidak ditemukan Universitas / Sekolah / Instansi dengan kata kunci tersebut.</span>
+                            </div>
+                        `;
+                    } else {
+                        let html = '';
+                        results.forEach(name => {
+                            const safeName = name.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                            html += `
+                                <button type="button" data-univ="${safeName}" class="w-full text-left px-3 py-2.5 hover:bg-teal-50 hover:text-teal-900 flex items-center gap-2.5 transition text-gray-700 cursor-pointer">
+                                    <i class="fa-solid fa-building-columns text-teal-600 shrink-0 text-xs"></i>
+                                    <span class="font-medium truncate">${safeName}</span>
+                                </button>
+                            `;
+                        });
+                        list.innerHTML = html;
+                    }
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                    console.error('Univ search error:', err);
+                    list.innerHTML = `
+                        <div class="p-3 text-center text-gray-400">
+                            <p class="text-xs">Gagal memuat rekomendasi universitas.</p>
+                            <p class="text-[10px] text-gray-400">Pastikan perangkat Anda terhubung ke internet.</p>
+                        </div>
+                    `;
+                } finally {
+                    spinner?.classList.add('hidden');
+                    icon?.classList.remove('hidden');
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             setupModalForms();
+            initUniversitasAutocomplete();
 
             @if(isset($activePendaftaranModal) && $activePendaftaranModal)
                 const targetModal = document.getElementById('{{ $activePendaftaranModal }}');
