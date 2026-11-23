@@ -12,8 +12,8 @@ if [ ! -f /var/www/html/.env ]; then
     fi
 fi
 
-if [ ! -d /var/www/html/vendor ]; then
-    echo "Vendor folder missing, running composer install..."
+if [ ! -f /var/www/html/vendor/autoload.php ]; then
+    echo "Composer dependencies missing, running composer install..."
     composer install --no-interaction --prefer-dist --optimize-autoloader
 fi
 
