@@ -39,6 +39,8 @@ class ApplicationMember extends Model
         'jurusan',
         'no_hp',
         'is_ketua',
+        'username',
+        'email',
     ];
 
     public function application(): BelongsTo
@@ -75,4 +77,15 @@ class ApplicationMember extends Model
 
     public function getIsKetuaAttribute(): bool { return (bool) ($this->attributes['is_leader'] ?? false); }
     public function setIsKetuaAttribute($v) { $this->attributes['is_leader'] = (bool) $v; }
+
+    public function getUsernameAttribute()
+    {
+        return $this->user?->username ?? $this->application?->leader?->username ?? null;
+    }
+
+    public function getEmailAttribute()
+    {
+        return $this->user?->email ?? $this->application?->leader?->email ?? null;
+    }
 }
+

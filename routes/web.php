@@ -76,6 +76,10 @@ Route::middleware(['auth', 'role:admin,pegawai'])->group(function () {
     Route::post('/siswa/{id}/update-periode', [AdminController::class, 'updatePeriodeSiswa'])->name('siswa.update_periode');
     Route::post('/admin/siswa/{id}/update-periode', [AdminController::class, 'updatePeriodeSiswa'])->name('admin.siswa.update_periode');
     Route::post('/pegawai/siswa/{id}/update-periode', [AdminController::class, 'updatePeriodeSiswa'])->name('pegawai.siswa.update_periode');
+
+    // Pengaturan WFH Siswa (Admin & Pegawai)
+    Route::post('/siswa/{id}/set-wfh', [EmployeeController::class, 'setWfh'])->name('siswa.set_wfh');
+    Route::post('/pegawai/siswa/{id}/set-wfh', [EmployeeController::class, 'setWfh'])->name('pegawai.siswa.set_wfh');
 });
 
 Route::middleware(['auth', 'role:pegawai'])->group(function () {

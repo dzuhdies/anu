@@ -61,7 +61,7 @@ class StudentController extends Controller
         $startDate = $studentProfile->start_date;
         $endDate = $studentProfile->end_date;
 
-        // Cek apakah tanggal mulai magang sudah tercapai
+        // Cek periode magang
         if ($startDate && Carbon::today()->lt(Carbon::parse($startDate)->startOfDay())) {
             $tglMulai = Carbon::parse($startDate)->translatedFormat('d F Y');
             $hariMenuju = Carbon::today()->diffInDays(Carbon::parse($startDate)->startOfDay());
@@ -90,6 +90,7 @@ class StudentController extends Controller
         $siswaProfile = $studentProfile;
         $absensi = $todayAttendance;
         $gedung = $studentProfile->building;
+        $isWfhToday = $studentProfile->isWfhOn();
 
         return view('siswa.absen', [
             'nama' => $studentProfile->full_name,
@@ -99,6 +100,10 @@ class StudentController extends Controller
             'serverTime' => now()->getTimestamp(),
             'jamTelat' => $jamTelat,
             'jenisIzin' => $jenisIzin,
+            'isWfhToday' => $isWfhToday,
+            'wfhStartDate' => $studentProfile->wfh_start_date ? $studentProfile->wfh_start_date->format('Y-m-d') : null,
+            'wfhEndDate' => $studentProfile->wfh_end_date ? $studentProfile->wfh_end_date->format('Y-m-d') : null,
+            'wfhNotes' => $studentProfile->wfh_notes,
         ]);
     }
 
@@ -174,6 +179,14 @@ class StudentController extends Controller
             $isWFO = $distance <= $maxRadius;
         }
 
+        $isWfhAllowed = $studentProfile->isWfhOn();
+        if (!$isWFO && !$isWfhAllowed) {
+            $jarakBulat = round($distance, 1);
+            $msg = "Presensi masuk ditolak: Anda berada di luar radius gedung kantor BPS ({$jarakBulat} meter) dan tidak memiliki izin WFH untuk hari ini. Silakan melakukan presensi di lokasi kantor.";
+            LogHelper::fail($request, 'Absen Masuk Ditolak (Luar Radius & Tanpa Izin WFH)', $msg);
+            return back()->with('error', $msg);
+        }
+
         $jamTelat = Setting::where('key', 'jam_telat')->value('value') ?? '08:16:00';
 
         $now = Carbon::now();
@@ -198,14 +211,14 @@ class StudentController extends Controller
             ]
         );
 
-        $wfoStatus = $isWFO ? 'WFO (Dalam Radius)' : 'WFH (Luar Radius)';
+        $wfoStatus = $isWFO ? 'Hadir (WFO Dalam Gedung)' : 'Hadir (WFH Izin Pegawai)';
         LogHelper::success(
             $request,
             'Absen Masuk Berhasil',
             "Siswa {$studentProfile->full_name} berhasil absen masuk pukul {$jamMasuk} ({$statusKetepatan}, {$wfoStatus}, jarak: " . round($distance, 1) . "m dari gedung)."
         );
 
-        return redirect()->route('siswa.absen.form')->with('success', 'Absen masuk berhasil!');
+        return redirect()->route('siswa.absen.form')->with('success', 'Absen masuk berhasil (' . ($isWFO ? 'WFO - Hadir' : 'WFH - Izin Pegawai') . ')!');
     }
 
     public function absenKeluar(Request $request)
@@ -246,6 +259,28 @@ class StudentController extends Controller
         if ($endDate && $today->gt(Carbon::parse($endDate)->endOfDay())) {
             $msg = 'Masa kegiatan magang Anda telah selesai.';
             LogHelper::fail($request, 'Absen Keluar Gagal (Masa Magang Selesai)', $msg);
+            return back()->with('error', $msg);
+        }
+
+        $building = $studentProfile->building;
+        $distance = 0;
+        $isWFO = true;
+        if ($building && $building->latitude && $building->longitude) {
+            $distance = $this->getDistance(
+                $lat,
+                $long,
+                $building->latitude,
+                $building->longitude
+            );
+            $maxRadius = $building->radius_meter ?? 50;
+            $isWFO = $distance <= $maxRadius;
+        }
+
+        $isWfhAllowed = $studentProfile->isWfhOn();
+        if (!$isWFO && !$isWfhAllowed) {
+            $jarakBulat = round($distance, 1);
+            $msg = "Presensi pulang ditolak: Anda berada di luar radius gedung kantor BPS ({$jarakBulat} meter) dan tidak memiliki izin WFH untuk hari ini. Silakan melakukan presensi di lokasi kantor.";
+            LogHelper::fail($request, 'Absen Keluar Ditolak (Luar Radius & Tanpa Izin WFH)', $msg);
             return back()->with('error', $msg);
         }
 

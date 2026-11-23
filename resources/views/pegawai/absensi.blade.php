@@ -797,6 +797,10 @@
                                                         'tanggal_selesai' => $siswa->tanggal_selesai ? \Carbon\Carbon::parse($siswa->tanggal_selesai)->format('d/m/Y') : '-',
                                                         'cv_url' => $cvUrl,
                                                         'porto_url' => $portoUrl,
+                                                        'wfh_start_date' => $siswa->wfh_start_date ? \Carbon\Carbon::parse($siswa->wfh_start_date)->format('Y-m-d') : null,
+                                                        'wfh_end_date' => $siswa->wfh_end_date ? \Carbon\Carbon::parse($siswa->wfh_end_date)->format('Y-m-d') : null,
+                                                        'is_wfh_today' => (bool)$siswa->isWfhOn(),
+                                                        'wfh_notes' => $siswa->wfh_notes ?? '',
                                                     ];
 
                                                     $absenData = $absensi ? [
@@ -935,6 +939,10 @@
                                                             'tanggal_selesai' => $siswa->tanggal_selesai ? \Carbon\Carbon::parse($siswa->tanggal_selesai)->format('d/m/Y') : '-',
                                                             'cv_url' => $cvUrl,
                                                             'porto_url' => $portoUrl,
+                                                            'wfh_start_date' => $siswa->wfh_start_date ? \Carbon\Carbon::parse($siswa->wfh_start_date)->format('Y-m-d') : null,
+                                                            'wfh_end_date' => $siswa->wfh_end_date ? \Carbon\Carbon::parse($siswa->wfh_end_date)->format('Y-m-d') : null,
+                                                            'is_wfh_today' => (bool)$siswa->isWfhOn(),
+                                                            'wfh_notes' => $siswa->wfh_notes ?? '',
                                                         ];
 
                                                         $absenData = [
@@ -1091,6 +1099,10 @@
                                             'tanggal_selesai' => $sw->tanggal_selesai ? \Carbon\Carbon::parse($sw->tanggal_selesai)->format('d/m/Y') : '-',
                                             'cv_url' => $swCvUrl,
                                             'porto_url' => $swPortoUrl,
+                                            'wfh_start_date' => $sw->wfh_start_date ? \Carbon\Carbon::parse($sw->wfh_start_date)->format('Y-m-d') : null,
+                                            'wfh_end_date' => $sw->wfh_end_date ? \Carbon\Carbon::parse($sw->wfh_end_date)->format('Y-m-d') : null,
+                                            'is_wfh_today' => (bool)$sw->isWfhOn(),
+                                            'wfh_notes' => $sw->wfh_notes ?? '',
                                         ];
 
                                         $b64Sw = base64_encode(json_encode($swMagangData, JSON_UNESCAPED_UNICODE));
@@ -1934,6 +1946,69 @@
                         <span>Portofolio</span>
                     </a>
                 </div>
+
+                <!-- ================= PENGATURAN IZIN WFH SISWA ================= -->
+                <div class="border border-indigo-100 bg-indigo-50/40 rounded-2xl p-4 space-y-3 mt-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-indigo-100">
+                        <div class="flex items-center gap-2">x
+                            <div>
+                                <span class="text-xs font-bold text-gray-900">Pengaturan Izin WFH</span>
+                                <p class="text-[10px] text-gray-500">Hanya siswa yang diizinkan WFH yang dapat presensi di luar kantor</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info Status Aktif WFH Saat Ini -->
+                    <div id="magangWfhActiveInfo" class="hidden p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+                            <div>
+                                <span class="font-bold block text-[11px] text-emerald-900">Izin WFH Aktif</span>
+                                <span id="magangWfhActiveDates" class="text-[10px] text-emerald-700 font-mono">-</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="submitWfhAction('cancel')" id="btnCancelWfh" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 font-semibold text-[10px] transition flex items-center gap-1 shadow-2xs">
+                            <i class="fa-solid fa-xmark"></i>
+                            <span>Cabut Izin WFH</span>
+                        </button>
+                    </div>
+
+                    <!-- Pilihan 1: Set WFH Hari Ini -->
+                    <div class="flex items-center justify-between gap-2 p-2.5 bg-white rounded-xl border border-indigo-100/80 shadow-2xs">
+                        <div>
+                            <div class="font-bold text-[11px] text-gray-800">Set WFH Hari Ini</div>
+                            <div class="text-[10px] text-gray-400">Berlaku hanya untuk hari ini ({{ \Carbon\Carbon::today()->translatedFormat('d F Y') }})</div>
+                        </div>
+                        <button type="button" onclick="submitWfhAction('today')" id="btnSetWfhToday" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition shrink-0 flex items-center gap-1.5">
+                            <i class="fa-solid fa-calendar-day text-[11px]"></i>
+                            <span>Set Hari Ini</span>
+                        </button>
+                    </div>
+
+                    <!-- Pilihan 2: Set WFH Rentang Tanggal -->
+                    <div class="p-2.5 bg-white rounded-xl border border-indigo-100/80 shadow-2xs space-y-2">
+                        <div class="font-bold text-[11px] text-gray-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-calendar-week text-indigo-600 text-[11px]"></i>
+                            <span>Set Rentang Tanggal WFH</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-medium text-gray-500 mb-0.5">Tanggal Mulai</label>
+                                <input type="date" id="wfhInputStart" class="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-600 bg-gray-50/50">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-medium text-gray-500 mb-0.5">Tanggal Selesai</label>
+                                <input type="date" id="wfhInputEnd" class="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-600 bg-gray-50/50">
+                            </div>
+                        </div>
+                        <div class="flex justify-end pt-0.5">
+                            <button type="button" onclick="submitWfhAction('range')" id="btnSetWfhRange" class="px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-xs">
+                                <i class="fa-solid fa-floppy-disk text-[10px]"></i>
+                                <span>Simpan Periode WFH</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Modal Footer -->
@@ -1950,10 +2025,6 @@
                         <span>Ubah Tanggal Selesai</span>
                     </button>
                 </div>
-                <button type="button" onclick="closeModal('detailMagangSiswaModal')"
-                    class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg font-medium text-xs hover:bg-gray-50 transition">
-                    Tutup
-                </button>
             </div>
         </div>
     </div>
@@ -2387,6 +2458,9 @@
                 const memberUniv = anggota.asal_univ || anggota.institution || '-';
                 const memberMajor = anggota.jurusan || anggota.major || '-';
                 const memberPhone = anggota.no_hp || anggota.phone || '-';
+                const memberUser = anggota.user || anggota.pengguna || (anggota.is_leader ? leader : null) || (idx === 0 ? leader : null) || {};
+                const memberUsername = anggota.username || memberUser.username || leader.username || '-';
+                const memberEmail = anggota.email || memberUser.email || leader.email || '-';
 
                 anggotasHtml += `
                     <div class="p-3.5 rounded-xl border border-gray-100 bg-[#fbfcfd] space-y-2">
@@ -2396,13 +2470,13 @@
                                 <span class="font-bold text-gray-900 text-sm">${memberName}</span>
                                 ${idx === 0 && isKelompok ? '<span class="text-[10px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-full border border-blue-200">Pengaju Utama</span>' : ''}
                             </div>
-                            <span class="text-[11px] font-mono text-gray-400">@${anggota.user?.username || '-'}</span>
+                            <span class="text-[11px] font-mono text-gray-400">@${memberUsername}</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
                             <div><span class="text-gray-400">Universitas:</span> <strong class="text-gray-800">${memberUniv}</strong></div>
                             <div><span class="text-gray-400">Jurusan:</span> <strong class="text-gray-800">${memberMajor}</strong></div>
                             <div><span class="text-gray-400">WhatsApp/HP:</span> <strong class="text-gray-800">${memberPhone}</strong></div>
-                            <div><span class="text-gray-400">Email:</span> <strong class="text-gray-800">${anggota.user?.email || '-'}</strong></div>
+                            <div><span class="text-gray-400">Email:</span> <strong class="text-gray-800">${memberEmail}</strong></div>
                         </div>
                         <div class="pt-2 border-t border-gray-100 flex items-center gap-2">
                             ${cvUrl ? `
@@ -3157,6 +3231,9 @@
                     link.classList.add('hidden');
                 }
 
+                // Update status WFH di modal
+                updateWfhModalUI(data);
+
                 showModal('detailMagangSiswaModal');
             } catch (err) {
                 console.error("Gagal membuka detail magang siswa:", err);
@@ -3164,6 +3241,123 @@
         }
 
         let currentSiswaMagangDetail = null;
+
+        function updateWfhModalUI(data) {
+            const badge = document.getElementById('magangWfhStatusBadge');
+            const infoBox = document.getElementById('magangWfhActiveInfo');
+            const datesText = document.getElementById('magangWfhActiveDates');
+            const inputStart = document.getElementById('wfhInputStart');
+            const inputEnd = document.getElementById('wfhInputEnd');
+
+            if (inputStart) inputStart.value = data.wfh_start_date || '';
+            if (inputEnd) inputEnd.value = data.wfh_end_date || '';
+
+            const hasWfh = !!(data.wfh_start_date && data.wfh_end_date);
+            if (hasWfh) {
+                if (badge) {
+                    badge.textContent = data.is_wfh_today ? 'WFH Aktif (Hari Ini)' : 'WFH Terjadwal';
+                    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200';
+                }
+                if (infoBox) {
+                    infoBox.classList.remove('hidden');
+                }
+                if (datesText) {
+                    datesText.textContent = `${data.wfh_start_date} s.d. ${data.wfh_end_date}`;
+                }
+            } else {
+                if (badge) {
+                    badge.textContent = 'WFO (Normal)';
+                    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200';
+                }
+                if (infoBox) {
+                    infoBox.classList.add('hidden');
+                }
+            }
+        }
+
+        async function submitWfhAction(mode) {
+            if (!currentSiswaMagangDetail || !currentSiswaMagangDetail.id) return;
+            const siswaId = currentSiswaMagangDetail.id;
+
+            let payload = {
+                _token: '{{ csrf_token() }}',
+                mode: mode
+            };
+
+            if (mode === 'range') {
+                const start = document.getElementById('wfhInputStart')?.value;
+                const end = document.getElementById('wfhInputEnd')?.value;
+                if (!start || !end) {
+                    alert('Silakan pilih Tanggal Mulai dan Tanggal Selesai untuk rentang WFH.');
+                    return;
+                }
+                if (start > end) {
+                    alert('Tanggal Selesai tidak boleh lebih awal dari Tanggal Mulai.');
+                    return;
+                }
+                payload.wfh_start_date = start;
+                payload.wfh_end_date = end;
+            }
+
+            const btnTarget = mode === 'today' ? document.getElementById('btnSetWfhToday') : (mode === 'range' ? document.getElementById('btnSetWfhRange') : document.getElementById('btnCancelWfh'));
+            const origHtml = btnTarget ? btnTarget.innerHTML : '';
+            if (btnTarget) {
+                btnTarget.disabled = true;
+                btnTarget.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Memproses...</span>';
+            }
+
+            try {
+                const res = await fetch(`/pegawai/siswa/${siswaId}/set-wfh`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const json = await res.json();
+                if (btnTarget) {
+                    btnTarget.disabled = false;
+                    btnTarget.innerHTML = origHtml;
+                }
+
+                if (json.success) {
+                    currentSiswaMagangDetail.wfh_start_date = json.data.wfh_start_date;
+                    currentSiswaMagangDetail.wfh_end_date = json.data.wfh_end_date;
+                    currentSiswaMagangDetail.is_wfh_today = json.data.is_wfh_today;
+                    updateWfhModalUI(currentSiswaMagangDetail);
+
+                    // Update data-siswa pada tombol di tabel agar tersinkronisasi jika dibuka ulang
+                    const buttons = document.querySelectorAll(`button[data-siswa]`);
+                    buttons.forEach(btn => {
+                        try {
+                            const b64 = btn.getAttribute('data-siswa');
+                            if (b64) {
+                                const parsed = JSON.parse(decodeURIComponent(escape(atob(b64))));
+                                if (parsed.id === currentSiswaMagangDetail.id) {
+                                    parsed.wfh_start_date = json.data.wfh_start_date;
+                                    parsed.wfh_end_date = json.data.wfh_end_date;
+                                    parsed.is_wfh_today = json.data.is_wfh_today;
+                                    btn.setAttribute('data-siswa', btoa(unescape(encodeURIComponent(JSON.stringify(parsed)))));
+                                }
+                            }
+                        } catch(e) {}
+                    });
+
+                    alert(json.message || 'Pengaturan WFH berhasil diperbarui.');
+                } else {
+                    alert(json.message || 'Gagal mengatur WFH.');
+                }
+            } catch (err) {
+                if (btnTarget) {
+                    btnTarget.disabled = false;
+                    btnTarget.innerHTML = origHtml;
+                }
+                alert('Terjadi kesalahan saat menyimpan pengaturan WFH: ' + err.message);
+            }
+        }
 
         function openUbahPeriodeFromDetailMagang() {
             if (!currentSiswaMagangDetail || !currentSiswaMagangDetail.id) return;

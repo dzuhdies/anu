@@ -185,6 +185,32 @@
     </div>
 </div>
 
+                    <!-- Status Banner Izin WFH Aktif -->
+                    @if($isWfhToday)
+                        <div class="p-3.5 bg-teal-50 border border-teal-200 text-teal-900 rounded-2xl text-xs font-medium flex items-center gap-3 shadow-2xs">
+                            <div class="w-9 h-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 text-sm">
+                                <i class="fa-solid fa-house-laptop"></i>
+                            </div>
+                            <div class="text-left">
+                                <span class="font-bold block text-teal-950 text-xs">Izin Work From Home (WFH) Aktif Hari Ini</span>
+                                <span class="text-[11px] text-teal-700 leading-tight block mt-0.5">Pegawai telah menyetujui izin WFH Anda. Anda dapat melakukan presensi di luar area kantor BPS.</span>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Banner Warning Luar Radius & Belum Ada Izin WFH (Dikontrol dinamis via JS) -->
+                    <div id="outsideRadiusWarningBanner" class="hidden p-3.5 bg-rose-50 border border-rose-200 text-rose-900 rounded-2xl text-xs font-medium flex items-start gap-3 shadow-2xs">
+                        <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 text-sm mt-0.5">
+                            <i class="fa-solid fa-location-crosshairs"></i>
+                        </div>
+                        <div class="text-left">
+                            <span class="font-bold block text-rose-950 text-xs">Presensi Dinonaktifkan (Di Luar Radius Kantor)</span>
+                            <span id="outsideRadiusWarningText" class="text-[11px] text-rose-700 leading-relaxed block mt-0.5">
+                                Anda berada di luar radius kantor BPS dan tidak memiliki izin WFH untuk hari ini. Tombol presensi tidak dapat digunakan.
+                            </span>
+                        </div>
+                    </div>
+
                     <!-- Kartu Aksi Utama Presensi (Tombol Absen Masuk / Pulang / Izin) -->
                     <div class="flex flex-col items-center justify-center text-center space-y-4">
                         @php
@@ -784,6 +810,7 @@
         const gedLat = parseFloat("{{ $gedung->latitude ?? 0 }}");
         const gedLong = parseFloat("{{ $gedung->longitude ?? 0 }}");
         const gedRadius = parseFloat("{{ $gedung->radius_meter ?? 10 }}");
+        const isWfhToday = {{ $isWfhToday ? 'true' : 'false' }};
 
         // Riwayat State
         let currentRiwayatDate = new Date();
@@ -1351,19 +1378,10 @@
                     }
 
                     const distanceEl = document.getElementById('distance');
-                    const statusGedungEl = document.getElementById('statusGedung');
                     if (gedLat && gedLong && gedRadius) {
                         const jarak = getDistanceFromLatLonInMeters(userGpsLat, userGpsLong, gedLat, gedLong);
                         if (distanceEl) distanceEl.textContent = jarak.toFixed(0) + ' meter';
-                        if (statusGedungEl) {
-                            if (jarak <= gedRadius) {
-                                statusGedungEl.textContent = 'Dalam Area BPS';
-                                statusGedungEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
-                            } else {
-                                statusGedungEl.textContent = 'Di Luar Area BPS';
-                                statusGedungEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200';
-                            }
-                        }
+                        applyAttendanceRadiusPolicy(jarak);
                     }
 
                     if (onSuccess) onSuccess(pos);
@@ -1382,11 +1400,85 @@
             );
         }
 
+        function applyAttendanceRadiusPolicy(jarak) {
+            const statusGedungEl = document.getElementById('statusGedung');
+            const btnIn = document.getElementById('btnClockInAction');
+            const btnOut = document.getElementById('btnClockOutAction');
+            const warningBanner = document.getElementById('outsideRadiusWarningBanner');
+            const warningText = document.getElementById('outsideRadiusWarningText');
+            
+            const isInside = jarak <= gedRadius;
+
+            if (isInside) {
+                // Di dalam area gedung: Hadir (WFO)
+                if (statusGedungEl) {
+                    statusGedungEl.textContent = 'Dalam Area BPS (WFO)';
+                    statusGedungEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+                }
+                if (warningBanner) warningBanner.classList.add('hidden');
+                
+                enableAttendanceButton(btnIn, 'emerald');
+                enableAttendanceButton(btnOut, 'rose');
+            } else {
+                // Di luar radius gedung
+                if (isWfhToday) {
+                    // Diizinkan WFH oleh pegawai
+                    if (statusGedungEl) {
+                        statusGedungEl.textContent = 'Luar Area (Izin WFH Aktif)';
+                        statusGedungEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200';
+                    }
+                    if (warningBanner) warningBanner.classList.add('hidden');
+
+                    enableAttendanceButton(btnIn, 'emerald');
+                    enableAttendanceButton(btnOut, 'rose');
+                } else {
+                    // TIDAK BISA ABSEN (Button tidak bisa dipencet)
+                    if (statusGedungEl) {
+                        statusGedungEl.textContent = 'Luar Area (Presensi Nonaktif)';
+                        statusGedungEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200';
+                    }
+                    if (warningBanner) {
+                        warningBanner.classList.remove('hidden');
+                        if (warningText) {
+                            warningText.innerHTML = `Anda berada <strong>${jarak.toFixed(0)} meter</strong> di luar jangkauan gedung kantor BPS (Radius Maksimal: ${gedRadius}m) dan tidak memiliki izin WFH untuk hari ini. Anda hanya dapat melakukan presensi di lokasi kantor BPS.`;
+                        }
+                    }
+
+                    disableAttendanceButton(btnIn, 'emerald');
+                    disableAttendanceButton(btnOut, 'rose');
+                }
+            }
+        }
+
+        function enableAttendanceButton(btn, color) {
+            if (!btn) return;
+            btn.disabled = false;
+            btn.classList.remove('opacity-40', 'grayscale', 'cursor-not-allowed', 'pointer-events-none');
+            btn.classList.add('cursor-pointer', `btn-pulse-${color}`);
+            btn.removeAttribute('aria-disabled');
+        }
+
+        function disableAttendanceButton(btn, color) {
+            if (!btn) return;
+            btn.disabled = true;
+            btn.classList.add('opacity-40', 'grayscale', 'cursor-not-allowed');
+            btn.classList.remove('cursor-pointer', `btn-pulse-${color}`);
+            btn.setAttribute('aria-disabled', 'true');
+        }
+
         function validateAndStartAbsen(formType) {
             pendingFormAction = formType;
 
             // Jika GPS sudah tersimpan dan valid
             if (userGpsLat && userGpsLong) {
+                if (gedLat && gedLong && gedRadius) {
+                    const jarak = getDistanceFromLatLonInMeters(userGpsLat, userGpsLong, gedLat, gedLong);
+                    if (jarak > gedRadius && !isWfhToday) {
+                        alert(`Presensi Tidak Dapat Dilakukan:\nAnda berada ${jarak.toFixed(0)} meter di luar radius kantor BPS dan tidak memiliki izin WFH dari pegawai. Anda hanya dapat melakukan presensi di lokasi kantor.`);
+                        return;
+                    }
+                }
+
                 const latInput = document.getElementById('lat');
                 const longInput = document.getElementById('long');
                 const latKeluar = document.getElementById('latKeluar');
@@ -1405,6 +1497,13 @@
             fetchUserGps(
                 () => {
                     hideLoading();
+                    if (gedLat && gedLong && gedRadius) {
+                        const jarak = getDistanceFromLatLonInMeters(userGpsLat, userGpsLong, gedLat, gedLong);
+                        if (jarak > gedRadius && !isWfhToday) {
+                            alert(`Presensi Tidak Dapat Dilakukan:\nAnda berada ${jarak.toFixed(0)} meter di luar radius kantor BPS dan tidak memiliki izin WFH dari pegawai. Anda hanya dapat melakukan presensi di lokasi kantor.`);
+                            return;
+                        }
+                    }
                     startCamera(formType);
                 },
                 (err) => {

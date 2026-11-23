@@ -38,7 +38,7 @@ class AdminController extends Controller
             $q->where('status', 'approved');
         }])->orderBy('name')->get();
 
-        $pendaftarans = InternshipApplication::with(['divisi', 'anggotas.user', 'ketua'])
+        $pendaftarans = InternshipApplication::with(['divisi', 'division', 'anggotas.user', 'members.user', 'ketua', 'leader'])
             ->latest()
             ->get();
 

@@ -18,6 +18,9 @@ class StudentProfile extends Model
         'division_id',
         'start_date',
         'end_date',
+        'wfh_start_date',
+        'wfh_end_date',
+        'wfh_notes',
         'can_shortcut',
         'shortcut_lat',
         'shortcut_long',
@@ -35,9 +38,33 @@ class StudentProfile extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'wfh_start_date' => 'date',
+        'wfh_end_date' => 'date',
         'can_shortcut' => 'boolean',
         'shortcut_active' => 'boolean',
     ];
+
+    protected $appends = [
+        'is_wfh_today',
+    ];
+
+    public function isWfhOn($date = null): bool
+    {
+        if (!$this->wfh_start_date || !$this->wfh_end_date) {
+            return false;
+        }
+
+        $targetDate = $date ? \Carbon\Carbon::parse($date)->toDateString() : \Carbon\Carbon::today()->toDateString();
+        $start = \Carbon\Carbon::parse($this->wfh_start_date)->toDateString();
+        $end = \Carbon\Carbon::parse($this->wfh_end_date)->toDateString();
+
+        return $targetDate >= $start && $targetDate <= $end;
+    }
+
+    public function getIsWfhTodayAttribute(): bool
+    {
+        return $this->isWfhOn();
+    }
 
     public function user(): BelongsTo
     {

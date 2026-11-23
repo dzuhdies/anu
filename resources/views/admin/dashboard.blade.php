@@ -2567,6 +2567,9 @@
                 const memberUniv = anggota.asal_univ || anggota.institution || '-';
                 const memberMajor = anggota.jurusan || anggota.major || '-';
                 const memberPhone = anggota.no_hp || anggota.phone || '-';
+                const memberUser = anggota.user || anggota.pengguna || (anggota.is_leader ? leader : null) || (idx === 0 ? leader : null) || {};
+                const memberUsername = anggota.username || memberUser.username || leader.username || '-';
+                const memberEmail = anggota.email || memberUser.email || leader.email || '-';
 
                 anggotasHtml += `
                     <div class="p-4 rounded-xl border border-gray-100 bg-[#fbfcfd] space-y-2">
@@ -2576,13 +2579,13 @@
                                 <span class="font-bold text-gray-900 text-sm">${memberName}</span>
                                 ${idx === 0 && isKelompok ? '<span class="text-[10px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-full border border-blue-200">Pengaju Permohonan</span>' : ''}
                             </div>
-                            <span class="text-[11px] font-mono text-gray-400">@${anggota.user?.username || '-'}</span>
+                            <span class="text-[11px] font-mono text-gray-400">@${memberUsername}</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
                             <div><span class="text-gray-400">Universitas:</span> <strong class="text-gray-800">${memberUniv}</strong></div>
                             <div><span class="text-gray-400">Jurusan:</span> <strong class="text-gray-800">${memberMajor}</strong></div>
                             <div><span class="text-gray-400">WhatsApp/HP:</span> <strong class="text-gray-800">${memberPhone}</strong></div>
-                            <div><span class="text-gray-400">Email:</span> <strong class="text-gray-800">${anggota.user?.email || '-'}</strong></div>
+                            <div><span class="text-gray-400">Email:</span> <strong class="text-gray-800">${memberEmail}</strong></div>
                         </div>
                         <div class="pt-2 border-t border-gray-100 flex items-center gap-2">
                             ${cvUrl ? `
