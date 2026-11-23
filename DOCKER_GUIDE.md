@@ -15,7 +15,7 @@ Pastikan komputer sudah terinstall:
 1. **Clone repository ini**:
    ```bash
    git clone <URL_REPOSITORY>
-   cd magang-bps
+   cd magang
    ```
 
 2. **Jalankan Docker Compose**:
@@ -37,7 +37,7 @@ Pastikan komputer sudah terinstall:
 
 | Layanan | URL Akses | Keterangan / Kredensial Default |
 |---|---|---|
-| **Web Portal Magang** | [http://localhost:8080](http://localhost:8080) | Aplikasi utama |
+| **Web Portal Magang** | [http://localhost:8082](http://localhost:8082) | Aplikasi utama |
 | **phpMyAdmin** | [http://localhost:8081](http://localhost:8081) | User: `root` / Pass: `root_secret_password` |
 | **MySQL Port** | `localhost:3307` | Database: `magangbps`, User: `magang_user`, Pass: `magang_secret` |
 

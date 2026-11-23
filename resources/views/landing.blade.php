@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Badan Pusat Statistik Kota Malang</title>
     <meta name="description" content="Portal Resmi Pendaftaran, Seleksi Divisi, dan Presensi Magang / PKL Badan Pusat Statistik (BPS) Kota Malang.">
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -36,7 +36,7 @@
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,8 +71,15 @@
         }
 
         @keyframes floating {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
         }
     </style>
 
@@ -85,7 +92,7 @@
     <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 sm:h-20">
-                
+
                 <!-- Logo & Brand -->
                 <a href="#beranda" class="flex items-center gap-3 group">
                     <img src="{{ asset('logo-bps-malang.png') }}" alt="Logo BPS Kota Malang" class="h-9 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105">
@@ -95,37 +102,37 @@
                 <!-- Auth Action Buttons -->
                 <div class="hidden sm:flex items-center gap-3">
                     @auth
-                        <a href="{{ $dashboardUrl ?? route('login') }}" class="px-4 py-2 rounded-xl bg-bps-900 hover:bg-black text-white text-xs font-bold shadow-sm transition flex items-center gap-2">
-                            <i class="fa-solid fa-gauge text-xs"></i>
-                            <span>Buka Portal ({{ Auth::user()->username }})</span>
-                        </a>
-                        <form method="POST" action="{{ route('logout') }}" class="inline">
-                            @csrf
-                            <button type="submit" title="Keluar Akun" class="w-9 h-9 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition">
-                                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
-                            </button>
-                        </form>
+                    <a href="{{ $dashboardUrl ?? route('login') }}" class="px-4 py-2 rounded-xl bg-bps-900 hover:bg-black text-white text-xs font-bold shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-gauge text-xs"></i>
+                        <span>Buka Portal ({{ Auth::user()->username }})</span>
+                    </a>
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button type="submit" title="Keluar Akun" class="w-9 h-9 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition">
+                            <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+                        </button>
+                    </form>
                     @else
-                        <a href="{{ route('login') }}" class="px-4 py-2 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold transition">
-                            Masuk
-                        </a>
-                        <a href="{{ route('register') }}" class="px-4 py-2 rounded-xl bg-bps-600 hover:bg-bps-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 shadow-bps-500/20">
-                            <i class="fa-solid fa-user-plus text-[11px]"></i>
-                            <span>Daftar Magang</span>
-                        </a>
+                    <a href="{{ route('login') }}" class="px-4 py-2 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold transition">
+                        Masuk
+                    </a>
+                    <a href="{{ route('register') }}" class="px-4 py-2 rounded-xl bg-bps-600 hover:bg-bps-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 shadow-bps-500/20">
+                        <i class="fa-solid fa-user-plus text-[11px]"></i>
+                        <span>Daftar Magang</span>
+                    </a>
                     @endauth
                 </div>
 
                 <!-- Mobile Menu Button -->
                 <div class="flex sm:hidden items-center gap-2">
                     @auth
-                        <a href="{{ $dashboardUrl ?? route('login') }}" class="px-3 py-1.5 rounded-lg bg-bps-900 text-white text-[11px] font-bold">
-                            Portal
-                        </a>
+                    <a href="{{ $dashboardUrl ?? route('login') }}" class="px-3 py-1.5 rounded-lg bg-bps-900 text-white text-[11px] font-bold">
+                        Portal
+                    </a>
                     @else
-                        <a href="{{ route('login') }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-[11px] font-bold">
-                            Masuk
-                        </a>
+                    <a href="{{ route('login') }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-[11px] font-bold">
+                        Masuk
+                    </a>
                     @endauth
                     <button type="button" id="mobileMenuBtn" onclick="toggleMobileMenu()" class="w-9 h-9 rounded-lg border border-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-100 transition" aria-label="Toggle Menu">
                         <i id="mobileMenuIcon" class="fa-solid fa-bars text-sm"></i>
@@ -138,16 +145,16 @@
         <div id="mobileMenu" class="hidden sm:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 pt-3 pb-5 space-y-3 shadow-lg">
             <div class="pt-2 border-t border-slate-100 flex items-center gap-2">
                 @auth
-                    <a href="{{ $dashboardUrl ?? route('login') }}" class="w-full py-2.5 rounded-xl bg-bps-900 text-white text-xs font-bold text-center">
-                        Buka Portal ({{ Auth::user()->username }})
-                    </a>
+                <a href="{{ $dashboardUrl ?? route('login') }}" class="w-full py-2.5 rounded-xl bg-bps-900 text-white text-xs font-bold text-center">
+                    Buka Portal ({{ Auth::user()->username }})
+                </a>
                 @else
-                    <a href="{{ route('login') }}" class="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold text-center">
-                        Masuk
-                    </a>
-                    <a href="{{ route('register') }}" class="w-1/2 py-2.5 rounded-xl bg-bps-600 text-white text-xs font-bold text-center shadow-sm">
-                        Daftar Magang
-                    </a>
+                <a href="{{ route('login') }}" class="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold text-center">
+                    Masuk
+                </a>
+                <a href="{{ route('register') }}" class="w-1/2 py-2.5 rounded-xl bg-bps-600 text-white text-xs font-bold text-center shadow-sm">
+                    Daftar Magang
+                </a>
                 @endauth
             </div>
         </div>
@@ -160,22 +167,22 @@
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                
+
                 <!-- Hero Left: Text & Action -->
                 <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
-                    
+
 
                     <!-- Main Headline -->
                     <h1 class="mt-6 max-w-xl font-display text-4xl font-extrabold leading-[1.12] tracking-tight text-gray-900 sm:text-5xl">
-                            Mulai Karirmu dari
-                            <span class="relative inline-block whitespace-nowrap text-orange-500">
-                                Magang Terbaik
-                                <svg class="absolute -bottom-2 left-0 w-full text-orange-300" viewBox="0 0 200 12" preserveAspectRatio="none" fill="none" aria-hidden="true">
-                                    <path d="M2 9C40 3 92 2 198 6" stroke="currentColor" stroke-width="5" stroke-linecap="round" />
-                                </svg>
-                            </span>
-                            di sini.
-                        </h1>
+                        Mulai Karirmu dari
+                        <span class="relative inline-block whitespace-nowrap text-orange-500">
+                            Magang Terbaik
+                            <svg class="absolute -bottom-2 left-0 w-full text-orange-300" viewBox="0 0 200 12" preserveAspectRatio="none" fill="none" aria-hidden="true">
+                                <path d="M2 9C40 3 92 2 198 6" stroke="currentColor" stroke-width="5" stroke-linecap="round" />
+                            </svg>
+                        </span>
+                        di sini.
+                    </h1>
 
 
                     <!-- Subtitle -->
@@ -188,7 +195,7 @@
                 <!-- Hero Right: Interactive Visual Card Mockup -->
                 <div class="lg:col-span-5 relative">
                     <div class="relative mx-auto max-w-md">
-                        
+
                         <!-- Floating Highlight Card 1: GPS Presensi -->
                         <div class="floating-element absolute -top-4 -left-4 sm:-left-6 z-20 glass-card border border-white/80 rounded-2xl p-3.5 shadow-xl flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-base shadow-sm">
@@ -211,11 +218,11 @@
                             </div>
                         </div>
 
-<div class="w-full h-85 sm:h-85 rounded-2xl overflow-hidden shadow-lg">
-    <img src="{{ asset('logo-bps-malang.png') }}" 
-         alt="Foto Magang BPS Kota Malang" 
-         class="w-full h-full object-cover">
-</div>
+                        <div class="w-full h-85 sm:h-85 rounded-2xl overflow-hidden shadow-lg">
+                            <img src="{{ asset('logo-bps-malang.png') }}"
+                                alt="Foto Magang BPS Kota Malang"
+                                class="w-full h-full object-cover">
+                        </div>
 
                     </div>
                 </div>
@@ -237,7 +244,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2    sm:gap-10">
-                
+
                 <!-- Feature 1 -->
                 <div class="p-6 rounded-2xl bg-slate-50/70 border border-slate-200/80 hover:border-bps-300 hover:shadow-md transition-all duration-300 group">
                     <div class="w-12 h-12 rounded-xl bg-bps-100 text-bps-700 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
@@ -279,7 +286,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
-                
+
                 <!-- Step 1 -->
                 <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3 relative group hover:border-slate-400 transition">
                     <div class="w-10 h-10 rounded-xl bg-slate-900 text-white font-black flex items-center justify-center text-sm shadow-xs">
@@ -361,7 +368,7 @@
 
             <!-- Accordion -->
             <div class="space-y-3" id="faqAccordion">
-                
+
                 <!-- Q1 -->
                 <div class="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50">
                     <button type="button" onclick="toggleFaq(1)" class="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-slate-900 hover:bg-slate-50 transition">
@@ -432,16 +439,16 @@
             </p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                 @auth
-                    <a href="{{ $dashboardUrl ?? route('login') }}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-bps-500 hover:bg-bps-600 text-white font-bold text-xs sm:text-sm shadow-lg transition">
-                        Buka Dashboard Saya
-                    </a>
+                <a href="{{ $dashboardUrl ?? route('login') }}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-bps-500 hover:bg-bps-600 text-white font-bold text-xs sm:text-sm shadow-lg transition">
+                    Buka Dashboard Saya
+                </a>
                 @else
-                    <a href="{{ route('register') }}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-bps-500 hover:bg-bps-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-bps-500/25 transition">
-                        Daftar Magang Sekarang
-                    </a>
-                    <a href="{{ route('login') }}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-white/20 hover:bg-white/10 text-white font-bold text-xs sm:text-sm transition">
-                        Masuk ke Akun
-                    </a>
+                <a href="{{ route('register') }}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-bps-500 hover:bg-bps-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-bps-500/25 transition">
+                    Daftar Magang Sekarang
+                </a>
+                <a href="{{ route('login') }}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-white/20 hover:bg-white/10 text-white font-bold text-xs sm:text-sm transition">
+                    Masuk ke Akun
+                </a>
                 @endauth
             </div>
         </div>
@@ -451,7 +458,7 @@
     <section id="kontak" class="py-16 sm:py-20 bg-slate-50 border-b border-slate-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                
+
                 <!-- Info Kontak -->
                 <div class="space-y-4">
                     <span class="text-xs font-bold uppercase tracking-wider text-bps-700 bg-bps-100 px-3 py-1 rounded-full">
@@ -494,13 +501,13 @@
                 <!-- Google Maps Card Preview -->
                 <div class="rounded-3xl overflow-hidden border border-slate-200 shadow-md bg-white p-3 space-y-3">
                     <div class="h-64 sm:h-72 w-full rounded-2xl overflow-hidden relative">
-                        <iframe 
-                            src="https://www.google.com/maps?q=Badan+Pusat+Statistik+Kota+Malang,+Jl.+Jend.+A.+Yani+No.+5,+Blimbing,+Kota+Malang&output=embed" 
-                            width="100%" 
-                            height="100%" 
-                            style="border:0;" 
-                            allowfullscreen="" 
-                            loading="lazy" 
+                        <iframe
+                            src="https://www.google.com/maps?q=Badan+Pusat+Statistik+Kota+Malang,+Jl.+Jend.+A.+Yani+No.+5,+Blimbing,+Kota+Malang&output=embed"
+                            width="100%"
+                            height="100%"
+                            style="border:0;"
+                            allowfullscreen=""
+                            loading="lazy"
                             referrerpolicy="no-referrer-when-downgrade"
                             title="Peta Lokasi Kantor BPS Kota Malang">
                         </iframe>
@@ -521,7 +528,7 @@
     <footer class="bg-slate-900 text-slate-400 text-xs py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                
+
                 <!-- Col 1: Brand -->
                 <div class="md:col-span-2 space-y-3">
                     <div class="flex items-center gap-3">
@@ -603,4 +610,5 @@
         });
     </script>
 </body>
+
 </html>
