@@ -1,14 +1,4 @@
-# 🚀 Panduan Menjalankan Project dengan Docker
-
-Panduan ini ditujukan agar orang lain atau tim dapat menjalankan project **Portal Magang BPS** secara instan tanpa perlu menginstall PHP, Composer, MySQL, atau Nginx secara manual di komputer mereka.
-
----
-
-## 📋 Prasyarat
-Pastikan komputer sudah terinstall:
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / macOS) atau **Docker Engine + Docker Compose** (Linux).
-
----
+# Panduan Menjalankan Project dengan Docker
 
 ## ⚡ Langkah Cepat (One-Command Setup)
 
