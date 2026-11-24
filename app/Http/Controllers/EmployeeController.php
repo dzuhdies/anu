@@ -15,6 +15,7 @@ use App\Models\Setting;
 use App\Models\InternshipApplication;
 use App\Models\Division;
 use App\Models\Attendance;
+use App\Models\StudentMonthlyProgress;
 
 class EmployeeController extends Controller
 {
@@ -219,6 +220,26 @@ class EmployeeController extends Controller
             ];
         })->values();
 
+        // Query berkas progres bulanan untuk review pegawai
+        $progresQuery = StudentMonthlyProgress::with(['student.division', 'student.building', 'reviewer'])
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->orderByDesc('updated_at');
+
+        if ($request->filled('q')) {
+            $term = '%' . trim($request->q) . '%';
+            $progresQuery->whereHas('student', fn ($q) => $q
+                ->where('full_name', 'like', $term)
+                ->orWhere('institution', 'like', $term));
+        }
+
+        if ($request->filled('progres_status')) {
+            $progresQuery->where('status', $request->progres_status);
+        }
+
+        $monthlyProgresses = $progresQuery->paginate(15, ['*'], 'progres_page')->withQueryString();
+        $monthlyProgressPendingCount = StudentMonthlyProgress::where('status', StudentMonthlyProgress::STATUS_PENDING)->count();
+
         $activeTab = $request->input('tab', ($dariInput || $keInput || $tanggal || $bulan) ? 'absensi' : 'pendaftaran');
 
         $logMessage = 'Pegawai melihat dashboard presensi & seleksi';
@@ -264,7 +285,9 @@ class EmployeeController extends Controller
             'logbookReviewEnabled',
             'logbooks',
             'logbookStats',
-            'logbookPayload'
+            'logbookPayload',
+            'monthlyProgresses',
+            'monthlyProgressPendingCount'
         ));
     }
 

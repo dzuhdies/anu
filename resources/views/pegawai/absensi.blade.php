@@ -239,33 +239,13 @@
                         <li>
                             <button onclick="showMainContent('logbook'); closeSidebarMobile();" id="side-nav-logbook"
                                 class="sidebar-nav-link w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-book-open w-4 text-center text-amber-600"></i> Logbook Magang</span>
+                                <span class="flex items-center gap-3"><i class="fa-solid fa-book-open w-4 text-center text-black-600"></i> Logbook Magang</span>
                                 @if(($logbookPendingCount ?? 0) > 0)
                                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500 text-white">{{ $logbookPendingCount }}</span>
                                 @endif
                             </button>
                         </li>
                     </ul>
-                </div>
-
-                <!-- Group: Konfigurasi -->
-                <div>
-                    <h3 class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Konfigurasi</h3>
-                    <div class="p-3 bg-white border border-gray-100 rounded-xl">
-                        <form method="POST" action="{{ route('logbook.toggle') }}" class="flex items-center justify-between gap-2">
-                            @csrf
-                            <div>
-                                <span class="text-[11px] font-semibold text-gray-800 block">Review Logbook (Pegawai)</span>
-                                <span class="text-[10px] text-gray-400">{{ ($logbookReviewEnabled ?? true) ? 'Aktif' : 'Nonaktif' }}</span>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" name="enabled" value="1" class="sr-only peer"
-                                    {{ ($logbookReviewEnabled ?? true) ? 'checked' : '' }}
-                                    onchange="this.form.submit()">
-                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-500 transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
-                            </label>
-                        </form>
-                    </div>
                 </div>
 
                 <!-- Group: Informasi Penugasan -->

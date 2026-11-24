@@ -91,6 +91,38 @@ class StudentProfile extends Model
         return $this->hasMany(Logbook::class, 'student_id');
     }
 
+    public function monthlyProgresses(): HasMany
+    {
+        return $this->hasMany(StudentMonthlyProgress::class, 'student_id');
+    }
+
+    public function getInternshipMonths(): array
+    {
+        if (!$this->start_date || !$this->end_date) {
+            return [];
+        }
+
+        $start = \Carbon\Carbon::parse($this->start_date)->startOfMonth();
+        $end = \Carbon\Carbon::parse($this->end_date)->startOfMonth();
+
+        $months = [];
+        $curr = $start->copy();
+        $index = 1;
+
+        while ($curr <= $end) {
+            $months[] = [
+                'index' => $index++,
+                'year' => (int) $curr->year,
+                'month' => (int) $curr->month,
+                'name' => $curr->locale('id')->isoFormat('MMMM Y'),
+                'short_name' => $curr->locale('id')->isoFormat('MMM Y'),
+            ];
+            $curr->addMonth();
+        }
+
+        return $months;
+    }
+
     // Backward-compatible relations
     public function gedung(): BelongsTo
     {

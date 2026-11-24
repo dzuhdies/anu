@@ -18,6 +18,7 @@ use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\GedungController;
 use App\Http\Controllers\JenisIzinController;
 use App\Http\Controllers\PendaftaranController;
+use App\Http\Controllers\StudentProgressController;
 
 // Halaman Awal / Landing Page Portal Magang BPS Kota Malang
 Route::get('/', [LandingController::class, 'index'])->name('landing');
@@ -92,10 +93,14 @@ Route::middleware(['auth', 'role:pegawai'])->group(function () {
     Route::get('/pegawai/kalender-kuota', [EmployeeController::class, 'kalenderKuota'])->name('pegawai.kalender.kuota');
     Route::get('/pegawai/rekap/export', [EmployeeController::class, 'exportRekap'])->name('pegawai.absensi.export');
     Route::get('/pegawai/export-rekap', [EmployeeController::class, 'exportRekap'])->name('pegawai.export.rekap');
-Route::get('/pegawai/logbook', [PegawaiLogbookController::class, 'index'])->name('pegawai.logbook.index');
-Route::post('/pegawai/logbook/{logbook}/approve', [PegawaiLogbookController::class, 'approve'])->name('pegawai.logbook.approve');
-Route::post('/pegawai/logbook/{logbook}/reject', [PegawaiLogbookController::class, 'reject'])->name('pegawai.logbook.reject');
+    Route::get('/pegawai/logbook', [PegawaiLogbookController::class, 'index'])->name('pegawai.logbook.index');
+    Route::post('/pegawai/logbook/{logbook}/approve', [PegawaiLogbookController::class, 'approve'])->name('pegawai.logbook.approve');
+    Route::post('/pegawai/logbook/{logbook}/reject', [PegawaiLogbookController::class, 'reject'])->name('pegawai.logbook.reject');
     Route::get('/pegawai/siswa/{id}/riwayat-absensi', [EmployeeController::class, 'riwayatSiswa'])->name('pegawai.siswa.riwayat');
+    Route::get('/pegawai/siswa/{id}/logbook/export', [LogbookController::class, 'exportMonthlyForStudent'])->name('pegawai.siswa.logbook.export');
+    Route::get('/pegawai/siswa/{id}/progres', [StudentProgressController::class, 'getProgressForStudent'])->name('pegawai.siswa.progres');
+    Route::post('/pegawai/progres/{progress}/approve', [StudentProgressController::class, 'approve'])->name('pegawai.progres.approve');
+    Route::post('/pegawai/progres/{progress}/reject', [StudentProgressController::class, 'reject'])->name('pegawai.progres.reject');
 });
 
 Route::middleware(['auth', 'role:siswa'])->group(function () {
@@ -105,7 +110,13 @@ Route::middleware(['auth', 'role:siswa'])->group(function () {
     Route::get('/siswa/riwayat', [StudentController::class, 'getRiwayat'])->name('siswa.riwayat');
     Route::post('/siswa/absen-izin', [StudentController::class, 'absenIzin'])->name('siswa.absen.izin');
     Route::get('/siswa/logbook', [LogbookController::class, 'index'])->name('siswa.logbook.index');
+    Route::get('/siswa/logbook/bulan', [LogbookController::class, 'getMonthlyData'])->name('siswa.logbook.bulan');
+    Route::get('/siswa/logbook/detail', [LogbookController::class, 'getDetail'])->name('siswa.logbook.detail');
     Route::post('/siswa/logbook', [LogbookController::class, 'store'])->name('siswa.logbook.store');
+    Route::get('/siswa/logbook/export', [LogbookController::class, 'exportMonthly'])->name('siswa.logbook.export');
+    Route::get('/siswa/progres/data', [StudentProgressController::class, 'getProgressData'])->name('siswa.progres.data');
+    Route::post('/siswa/progres/upload', [StudentProgressController::class, 'upload'])->name('siswa.progres.upload');
+    Route::get('/siswa/progres/{progress}/download', [StudentProgressController::class, 'download'])->name('siswa.progres.download');
 });
 
 // Portal Pendaftaran Magang (Calon Peserta / Siswa)

@@ -137,11 +137,13 @@ class StudentController extends Controller
         $requestedTab = request()->query("tab");
         $initialTab = in_array(
             $requestedTab,
-            ["absen", "riwayat", "logbook"],
+            ["absen", "riwayat", "logbook", "progres"],
             true,
         )
             ? $requestedTab
             : "absen";
+
+        $progressData = app(\App\Http\Controllers\StudentProgressController::class)->buildProgressListForStudent($studentProfile);
 
         return view(
             "siswa.absen",
@@ -164,6 +166,7 @@ class StudentController extends Controller
                     "wfhNotes" => $studentProfile->wfh_notes,
                     "initialTab" => $initialTab,
                     "logbookReviewEnabled" => $logbookReviewEnabled,
+                    "progressData" => $progressData,
                 ],
                 $logbookData,
             ),

@@ -6,6 +6,27 @@
 </div>
 @endif
 
+<!-- Sub-tab Selector: Logbook Harian vs Berkas Progres Bulanan -->
+<div class="flex items-center gap-2 mb-5 p-1 bg-gray-100 rounded-xl w-fit">
+    <button type="button" onclick="switchPegawaiLogbookSubtab('harian')" id="btn-subtab-harian"
+        class="px-4 py-2 rounded-lg text-xs font-bold transition shadow-xs bg-white text-gray-900">
+        <i class="fa-solid fa-book-open mr-1.5 text-orange-500"></i>
+        <span>Logbook Harian</span>
+        @if(($logbookPendingCount ?? 0) > 0)
+            <span class="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500 text-white font-bold">{{ $logbookPendingCount }}</span>
+        @endif
+    </button>
+    <button type="button" onclick="switchPegawaiLogbookSubtab('progres')" id="btn-subtab-progres"
+        class="px-4 py-2 rounded-lg text-xs font-semibold text-gray-600 hover:text-gray-900 transition">
+        <i class="fa-solid fa-file-circle-check mr-1.5 text-teal-600"></i>
+        <span>Berkas Progres Bulanan (TTD)</span>
+        @if(($monthlyProgressPendingCount ?? 0) > 0)
+            <span class="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500 text-white font-bold">{{ $monthlyProgressPendingCount }}</span>
+        @endif
+    </button>
+</div>
+
+<div id="pegawai-logbook-harian-wrapper">
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
     <!-- Left Column: Kalender & Filter -->
@@ -363,6 +384,210 @@
         </div>
     </div>
 </div>
+</div> <!-- Close pegawai-logbook-harian-wrapper -->
+
+<!-- ================= TAB 2: BERKAS PROGRES BULANAN ================= -->
+<div id="pegawai-progres-bulanan-wrapper" class="hidden space-y-5">
+    <div class="card overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-[#fafafa]">
+            <div>
+                <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fa-solid fa-file-circle-check text-teal-600"></i>
+                    <span>Verifikasi Berkas Logbook Bulanan (TTD Ketua Divisi)</span>
+                </h3>
+                <p class="text-[11px] text-gray-400 mt-0.5">
+                    Periksa dan lakukan persetujuan (ACC) atau minta perbaikan berkas logbook bulanan yang diunggah peserta magang.
+                </p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                    {{ isset($monthlyProgresses) ? $monthlyProgresses->total() : 0 }} berkas tercatat
+                </span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left text-gray-600 responsive-table">
+                <thead class="text-[11px] text-gray-400 uppercase bg-[#fafafa] font-semibold border-b border-gray-100">
+                    <tr>
+                        <th scope="col" class="px-6 py-3.5">Peserta Magang</th>
+                        <th scope="col" class="px-6 py-3.5">Periode Bulan</th>
+                        <th scope="col" class="px-6 py-3.5">Berkas TTD</th>
+                        <th scope="col" class="px-6 py-3.5 text-center">Status</th>
+                        <th scope="col" class="px-6 py-3.5">Catatan / Feedback</th>
+                        <th scope="col" class="px-6 py-3.5 text-right">Aksi Verifikasi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @if(isset($monthlyProgresses) && count($monthlyProgresses) > 0)
+                        @foreach ($monthlyProgresses as $item)
+                            @php
+                                $namaSiswa = $item->student->full_name ?? 'Peserta Magang';
+                                $monthName = \Carbon\Carbon::createFromDate($item->year, $item->month, 1)->locale('id')->isoFormat('MMMM Y');
+                            @endphp
+                            <tr class="hover:bg-gray-50/70 transition-colors align-top">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-lg bg-teal-50 text-teal-700 border border-teal-100 font-bold flex items-center justify-center text-xs shrink-0">
+                                            {{ strtoupper(substr($namaSiswa, 0, 1)) }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-gray-900 text-sm">{{ $namaSiswa }}</div>
+                                            <div class="text-[11px] text-gray-500">
+                                                {{ $item->student->institution ?: '-' }}
+                                                @if ($item->student->division)
+                                                    · {{ $item->student->division->name }}
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="font-bold text-gray-900 text-xs">{{ $monthName }}</div>
+                                    <span class="text-[10px] text-gray-400">Tahun {{ $item->year }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-file-pdf text-rose-500 text-sm"></i>
+                                            <span class="font-medium text-gray-800 text-xs truncate max-w-[150px]">{{ $item->file_name }}</span>
+                                        </div>
+                                        <div class="text-[10px] text-gray-400">
+                                            {{ $item->file_size_formatted }} · {{ $item->updated_at->locale('id')->isoFormat('D MMM Y, HH:mm') }}
+                                        </div>
+                                        <a href="{{ route('siswa.progres.download', $item->id) }}" target="_blank"
+                                            class="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline mt-0.5">
+                                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                            <span>Buka Berkas</span>
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border {{ $item->status_badge }}">
+                                        @if($item->status === 'approved')
+                                            <i class="fa-solid fa-circle-check text-emerald-500"></i> Disetujui (ACC)
+                                        @elseif($item->status === 'rejected')
+                                            <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> Perlu Perbaikan
+                                        @else
+                                            <i class="fa-solid fa-clock text-amber-500"></i> Menunggu
+                                        @endif
+                                    </span>
+                                    @if($item->reviewed_at)
+                                        <span class="block text-[9px] text-gray-400 mt-0.5">{{ $item->reviewed_at->format('d/m/Y H:i') }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="space-y-1 text-xs max-w-xs">
+                                        @if($item->notes)
+                                            <p class="text-gray-600 italic text-[11px]">Siswa: "{{ $item->notes }}"</p>
+                                        @endif
+                                        @if($item->feedback)
+                                            <div class="p-2 bg-rose-50 rounded text-rose-800 border border-rose-100 text-[11px]">
+                                                <strong>Catatan Revisi:</strong> {{ $item->feedback }}
+                                            </div>
+                                        @endif
+                                        @if(!$item->notes && !$item->feedback)
+                                            <span class="text-gray-400 text-[11px]">-</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        {{-- Tombol Ekspor/Lihat Draft Logbook Siswa Bulan Itu --}}
+                                        <a href="{{ route('pegawai.siswa.logbook.export', $item->student_id) }}?bulan={{ $item->month }}&tahun={{ $item->year }}" target="_blank"
+                                            class="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-semibold transition"
+                                            title="Lihat Format Cetak Logbook Siswa Bulan Ini">
+                                            <i class="fa-solid fa-print text-gray-500"></i>
+                                        </a>
+
+                                        {{-- Tombol ACC --}}
+                                        <form method="POST" action="{{ route('pegawai.progres.approve', $item->id) }}" class="inline-block m-0"
+                                            onsubmit="return confirm('Apakah Anda yakin ingin MENYETUJUI (ACC) berkas bulan {{ $monthName }} milik {{ addslashes($namaSiswa) }}?');">
+                                            @csrf
+                                            <button type="submit"
+                                                class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs active:scale-95"
+                                                title="Setujui (ACC) Berkas">
+                                                <i class="fa-solid fa-check text-[11px]"></i>
+                                                <span>ACC</span>
+                                            </button>
+                                        </form>
+
+                                        {{-- Tombol Minta Perbaikan --}}
+                                        <button type="button"
+                                            onclick="openRejectProgresModal({{ $item->id }}, '{{ addslashes($namaSiswa) }}', '{{ addslashes($monthName) }}')"
+                                            class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center gap-1 active:scale-95"
+                                            title="Minta Perbaikan / Revisi Berkas">
+                                            <i class="fa-solid fa-pen text-[10px]"></i>
+                                            <span>Perbaiki</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-400">
+                                <i class="fa-solid fa-inbox text-3xl text-gray-300 mb-2 block"></i>
+                                <span class="font-medium">Belum ada berkas progres bulanan yang diunggah oleh siswa.</span>
+                            </td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+        @if(isset($monthlyProgresses) && $monthlyProgresses->hasPages())
+            <div class="p-4 border-t border-gray-100 bg-[#fafafa]">
+                {{ $monthlyProgresses->links() }}
+            </div>
+        @endif
+    </div>
+</div>
+
+<!-- Modal Minta Perbaikan Berkas Progres Pegawai -->
+<div id="modalRejectProgresPegawai" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scaleUp border border-gray-100">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center text-sm font-bold">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-sm">Minta Perbaikan Berkas</h3>
+                    <p class="text-[11px] text-gray-400" id="rejectProgresSub">Catatan perbaikan untuk siswa</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeRejectProgresModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center text-xs transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="formRejectProgresPegawai" method="POST" action="" class="space-y-4">
+            @csrf
+            <div>
+                <label for="rejectFeedbackInput" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Alasan / Catatan Perbaikan <span class="text-rose-500">*</span>
+                </label>
+                <textarea name="feedback" id="rejectFeedbackInput" rows="4" required minlength="3" maxlength="1000"
+                    placeholder="Jelaskan alasan berkas perlu diperbaiki (contoh: tanda tangan belum ada, cap belum lengkap, lembar logbook buram)..."
+                    class="w-full text-xs p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 resize-none bg-white leading-relaxed"></textarea>
+                <span class="text-[10px] text-gray-400 block mt-1">Catatan ini akan langsung terlihat oleh siswa di tab Progres.</span>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                <button type="button" onclick="closeRejectProgresModal()"
+                    class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium transition">
+                    Batal
+                </button>
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md active:scale-95">
+                    <i class="fa-solid fa-paper-plane text-[11px]"></i>
+                    <span>Kirim Catatan Perbaikan</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script>
     const logbookData = @json($logbookPayload);
@@ -515,6 +740,59 @@
     }
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') closeReview();
+        if (event.key === 'Escape') {
+            closeReview();
+            closeRejectProgresModal();
+        }
+    });
+
+    function switchPegawaiLogbookSubtab(subtab) {
+        const harianWrapper = document.getElementById('pegawai-logbook-harian-wrapper');
+        const progresWrapper = document.getElementById('pegawai-progres-bulanan-wrapper');
+        const btnHarian = document.getElementById('btn-subtab-harian');
+        const btnProgres = document.getElementById('btn-subtab-progres');
+
+        if (subtab === 'progres') {
+            harianWrapper?.classList.add('hidden');
+            progresWrapper?.classList.remove('hidden');
+
+            btnProgres?.classList.add('bg-white', 'text-gray-900', 'shadow-xs', 'font-bold');
+            btnProgres?.classList.remove('text-gray-600');
+            btnHarian?.classList.remove('bg-white', 'text-gray-900', 'shadow-xs', 'font-bold');
+            btnHarian?.classList.add('text-gray-600');
+        } else {
+            progresWrapper?.classList.add('hidden');
+            harianWrapper?.classList.remove('hidden');
+
+            btnHarian?.classList.add('bg-white', 'text-gray-900', 'shadow-xs', 'font-bold');
+            btnHarian?.classList.remove('text-gray-600');
+            btnProgres?.classList.remove('bg-white', 'text-gray-900', 'shadow-xs', 'font-bold');
+            btnProgres?.classList.add('text-gray-600');
+        }
+    }
+
+    function openRejectProgresModal(id, studentName, monthName) {
+        const modal = document.getElementById('modalRejectProgresPegawai');
+        const form = document.getElementById('formRejectProgresPegawai');
+        const sub = document.getElementById('rejectProgresSub');
+        const input = document.getElementById('rejectFeedbackInput');
+
+        if (form) form.action = `/pegawai/progres/${id}/reject`;
+        if (sub) sub.textContent = `${studentName} · Periode ${monthName}`;
+        if (input) input.value = '';
+
+        modal?.classList.remove('hidden');
+        input?.focus();
+    }
+
+    function closeRejectProgresModal() {
+        document.getElementById('modalRejectProgresPegawai')?.classList.add('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('subtab') === 'progres' || urlParams.get('progres_page')) {
+            switchPegawaiLogbookSubtab('progres');
+        }
     });
 </script>

@@ -90,40 +90,6 @@
         .btn-pulse-rose {
             animation: pulse-ring-rose 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
-
-        /* ================= LOGBOOK DATE PICKER (Access by KAI style) ================= */
-        .logbook-date-card {
-            background-color: #ffffff;
-            border-color: #e5e7eb;
-            color: #374151;
-        }
-
-        .logbook-date-card .logbook-date-label {
-            color: #9ca3af;
-        }
-
-        .logbook-date-card .logbook-date-meta {
-            color: #6b7280;
-        }
-
-        .logbook-date-card[data-active="true"] {
-            background-color: #111827;
-            border-color: #111827;
-            color: #ffffff;
-            box-shadow: 0 10px 22px -10px rgba(17, 24, 39, 0.55);
-        }
-
-        .logbook-date-card[data-active="true"] .logbook-date-label {
-            color: #fdba74;
-        }
-
-        .logbook-date-card[data-active="true"] .logbook-date-meta {
-            color: #d1d5db;
-        }
-
-        .logbook-date-card:active {
-            transform: scale(0.97);
-        }
     </style>
     @include('partials.pwa')
 </head>
@@ -226,7 +192,7 @@
                                 <i class="fa-solid fa-house-laptop"></i>
                             </div>
                             <div class="text-left">
-                                <span class="font-bold block text-teal-950 text-xs">Izin Work From Home Aktif Hari Ini</span>
+                                <span class="font-bold block text-teal-950 text-xs">Izin Work From Home Aktif</span>
                                 <span class="text-[11px] text-teal-700 leading-tight block mt-0.5">Anda dapat melakukan presensi di luar area kantor BPS.</span>
                             </div>
                         </div>
@@ -528,13 +494,15 @@
 
                 @include('siswa.partials.logbook-tab')
 
+                @include('siswa.partials.progres-tab')
+
             </div>
         </main>
     </div>
 
     <!-- ================= FLOATING BOTTOM NAVIGATION BAR ================= -->
     <div class="fixed bottom-5 inset-x-0 z-40 flex justify-center px-4 pointer-events-none">
-        <nav class="pointer-events-auto bg-white/95 backdrop-blur-xl border border-gray-200/90 shadow-[0_12px_36px_rgba(0,0,0,0.12)] rounded-full px-7 py-3 flex items-center gap-10 transition-all">
+        <nav class="pointer-events-auto bg-white/95 backdrop-blur-xl border border-gray-200/90 shadow-[0_12px_36px_rgba(0,0,0,0.12)] rounded-full px-6 sm:px-7 py-3 flex items-center gap-7 sm:gap-9 transition-all">
             <!-- TAB 1: ABSEN (PRESENSI) -->
             <button type="button" onclick="switchAbsenTab('absen')" id="tap-btn-absen"
                 class="transition-all active:scale-90 text-[#ff6b00] hover:opacity-90 flex items-center justify-center"
@@ -554,6 +522,13 @@
                 class="transition-all active:scale-90 text-gray-400 hover:text-gray-600 flex items-center justify-center"
                 title="Logbook Harian">
                 <i class="fa-solid fa-book-open text-xl"></i>
+            </button>
+
+            <!-- TAB 4: PROGRES BERKAS BULANAN -->
+            <button type="button" onclick="switchAbsenTab('progres')" id="tap-btn-progres"
+                class="transition-all active:scale-90 text-gray-400 hover:text-gray-600 flex items-center justify-center"
+                title="Progres Berkas Magang">
+                <i class="fa-solid fa-list-check text-xl"></i>
             </button>
         </nav>
     </div>
@@ -889,12 +864,14 @@
             absen: 'tap-btn-absen',
             riwayat: 'tap-btn-riwayat',
             logbook: 'tap-btn-logbook',
+            progres: 'tap-btn-progres',
         };
 
         const absenTabViews = {
             absen: 'view-absen',
             riwayat: 'view-riwayat',
             logbook: 'view-logbook',
+            progres: 'view-progres',
         };
 
         function syncStudentTabUrl({ tab = null, date = null } = {}) {
@@ -954,47 +931,587 @@
             }
 
             syncStudentTabUrl({ tab });
+
+            if (tab === 'logbook' && !logbookCalendarInitialized) {
+                initLogbookTab();
+            } else if (tab === 'progres') {
+                loadProgresData();
+            }
         }
 
-        // ================= LOGBOOK DATE PICKER =================
-        function scrollLogbookDates(direction) {
-            const rail = document.getElementById('logbookDateRail');
-            if (!rail) return;
-            rail.scrollBy({ left: direction * 160, behavior: 'smooth' });
+        // ================= LOGBOOK BULANAN & RINCIAN HARIAN =================
+        let currentLogbookDate = new Date();
+        let logbookMonthCache = {};
+        let selectedLogbookDateStr = null;
+        let currentLoadedLogbookData = null;
+        let logbookCalendarInitialized = false;
+
+        function prevLogbookMonth() {
+            currentLogbookDate.setMonth(currentLogbookDate.getMonth() - 1);
+            fetchLogbookMonthlyData(currentLogbookDate.getFullYear(), currentLogbookDate.getMonth() + 1);
         }
 
-        function selectLogbookDate(dateKey) {
-            document.querySelectorAll('[data-logbook-panel]').forEach((panel) => {
-                const isActive = panel.dataset.logbookPanel === dateKey;
-                panel.style.display = isActive ? 'block' : 'none';
-            });
-
-            document.querySelectorAll('[data-logbook-date]').forEach((card) => {
-                card.dataset.active = card.dataset.logbookDate === dateKey ? 'true' : 'false';
-            });
-
-            const activeCard = document.querySelector(`[data-logbook-date="${dateKey}"]`);
-            activeCard?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-
-            const activePanel = document.querySelector(`[data-logbook-panel="${dateKey}"]`);
-            activePanel?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-
-            syncStudentTabUrl({ tab: 'logbook', date: dateKey });
+        function nextLogbookMonth() {
+            currentLogbookDate.setMonth(currentLogbookDate.getMonth() + 1);
+            fetchLogbookMonthlyData(currentLogbookDate.getFullYear(), currentLogbookDate.getMonth() + 1);
         }
 
-        function bindLogbookCounters() {
-            document.querySelectorAll('[data-logbook-counter]').forEach((counter) => {
-                const input = document.getElementById(counter.dataset.logbookCounter);
-                if (!input) return;
+        function refreshLogbookCalendar() {
+            fetchLogbookMonthlyData(currentLogbookDate.getFullYear(), currentLogbookDate.getMonth() + 1, selectedLogbookDateStr);
+        }
 
-                const update = () => {
-                    const max = input.maxLength > 0 ? input.maxLength : 2000;
-                    counter.textContent = `${input.value.length}/${max}`;
+        function exportCurrentLogbookMonth() {
+            const year = currentLogbookDate.getFullYear();
+            const month = currentLogbookDate.getMonth() + 1;
+            const url = `{{ route('siswa.logbook.export') }}?bulan=${month}&tahun=${year}`;
+            window.open(url, '_blank');
+        }
+
+        function initLogbookTab(targetDate = null) {
+            logbookCalendarInitialized = true;
+            bindLogbookTextareaCounters();
+            bindLogbookFormSubmit();
+
+            let dateToSelect = targetDate;
+            if (!dateToSelect) {
+                const urlParams = new URLSearchParams(window.location.search);
+                dateToSelect = urlParams.get('date');
+            }
+
+            if (dateToSelect) {
+                const [y, m] = dateToSelect.split('-').map(Number);
+                if (y && m) {
+                    currentLogbookDate = new Date(y, m - 1, 1);
+                }
+            }
+
+            fetchLogbookMonthlyData(
+                currentLogbookDate.getFullYear(),
+                currentLogbookDate.getMonth() + 1,
+                dateToSelect
+            );
+        }
+
+        async function fetchLogbookMonthlyData(year, month, targetSelectDate = null) {
+            const labelEl = document.getElementById('labelLogbookBulanTahun');
+            if (labelEl) labelEl.textContent = `${namaBulanIndo[month - 1]} ${year}`;
+
+            const calEl = document.getElementById('logbookCalendarMatrix');
+            if (calEl) {
+                calEl.innerHTML = `
+                    <div class="col-span-7 py-8 flex flex-col items-center justify-center space-y-2 text-gray-400">
+                        <div class="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
+                        <span class="text-xs">Memuat kalender logbook...</span>
+                    </div>
+                `;
+            }
+
+            try {
+                const res = await fetch(`{{ route('siswa.logbook.bulan', [], false) }}?bulan=${month}&tahun=${year}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+
+                logbookMonthCache = {};
+                (data || []).forEach(item => {
+                    const dateStr = (item.date || '').split(/[T ]/)[0];
+                    if (dateStr) logbookMonthCache[dateStr] = item.status;
+                });
+
+                renderLogbookCalendar(year, month);
+
+                const now = new Date();
+                const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                let dateToSelect = targetSelectDate;
+                if (!dateToSelect) {
+                    if (now.getFullYear() === year && (now.getMonth() + 1) === month) {
+                        dateToSelect = todayStr;
+                    } else {
+                        dateToSelect = `${year}-${String(month).padStart(2, '0')}-01`;
+                    }
+                }
+
+                fetchLogbookDetail(dateToSelect);
+            } catch (err) {
+                console.error('Logbook calendar error:', err);
+                if (calEl) {
+                    calEl.innerHTML = `
+                        <div class="col-span-7 py-6 text-center space-y-2">
+                            <div class="text-xs font-semibold text-rose-500">Gagal memuat kalender logbook.</div>
+                            <button type="button" onclick="fetchLogbookMonthlyData(${year}, ${month})" class="text-[11px] font-bold text-gray-900 hover:underline">
+                                Coba Lagi
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function renderLogbookCalendar(year, month) {
+            const calEl = document.getElementById('logbookCalendarMatrix');
+            if (!calEl) return;
+            calEl.innerHTML = '';
+
+            const firstDayIndex = new Date(year, month - 1, 1).getDay();
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const daysInPrevMonth = new Date(year, month - 1, 0).getDate();
+            const adjustedFirstDay = (firstDayIndex === 0) ? 6 : firstDayIndex - 1;
+
+            // Prev Month spillover
+            for (let i = adjustedFirstDay - 1; i >= 0; i--) {
+                const dayNum = daysInPrevMonth - i;
+                const cell = document.createElement('div');
+                cell.className = 'py-2 text-gray-300 text-xs';
+                cell.textContent = dayNum;
+                calEl.appendChild(cell);
+            }
+
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayStr = String(day).padStart(2, '0');
+                const monthStr = String(month).padStart(2, '0');
+                const fullDate = `${year}-${monthStr}-${dayStr}`;
+                const status = logbookMonthCache[fullDate];
+
+                const dayOfWeek = new Date(year, month - 1, day).getDay();
+                const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+                const cell = document.createElement('div');
+                cell.className = 'py-1 flex flex-col items-center justify-center cursor-pointer rounded-lg transition hover:bg-gray-100';
+                cell.id = `cal-logbook-${fullDate}`;
+
+                let dotHtml = '';
+                if (status === 'approved') {
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-0.5"></span>`;
+                } else if (status === 'rejected') {
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mt-0.5"></span>`;
+                } else if (status === 'pending') {
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-0.5"></span>`;
+                } else {
+                    dotHtml = `<span class="w-1.5 h-1.5 rounded-full bg-gray-200 mt-0.5"></span>`;
+                }
+
+                const isToday = (fullDate === todayStr);
+                const todayRing = isToday ? ' ring-1 ring-gray-900 font-bold' : '';
+                const textClass = isWeekend ? 'text-rose-400' : 'text-gray-700';
+
+                cell.innerHTML = `
+                    <span class="text-xs font-semibold ${textClass}${todayRing}">${day}</span>
+                    ${dotHtml}
+                `;
+
+                cell.onclick = () => {
+                    fetchLogbookDetail(fullDate);
                 };
 
-                input.addEventListener('input', update);
-                update();
+                calEl.appendChild(cell);
+            }
+        }
+
+        function highlightLogbookCalendarCell(dateStr) {
+            document.querySelectorAll('[id^="cal-logbook-"]').forEach(el => {
+                el.classList.remove('bg-gray-900', 'text-white', 'shadow-xs');
+                const span = el.querySelector('span:first-child');
+                if (span) span.classList.remove('text-white');
             });
+
+            const activeCell = document.getElementById(`cal-logbook-${dateStr}`);
+            if (activeCell) {
+                activeCell.classList.add('bg-gray-900', 'shadow-xs');
+                const span = activeCell.querySelector('span:first-child');
+                if (span) {
+                    span.classList.remove('text-gray-700', 'text-rose-400');
+                    span.classList.add('text-white');
+                }
+            }
+        }
+
+        async function fetchLogbookDetail(dateStr) {
+            selectedLogbookDateStr = dateStr;
+            highlightLogbookCalendarCell(dateStr);
+            syncStudentTabUrl({ tab: 'logbook', date: dateStr });
+
+            const loadingEl = document.getElementById('logbookDetailLoading');
+            const bodyEl = document.getElementById('logbookDetailBody');
+            const dateFormattedEl = document.getElementById('logbookDetailDateFormatted');
+            const statusBadgeEl = document.getElementById('logbookDetailStatusBadge');
+
+            if (loadingEl) loadingEl.classList.remove('hidden');
+            if (bodyEl) bodyEl.classList.add('hidden');
+            if (statusBadgeEl) {
+                statusBadgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500';
+                statusBadgeEl.textContent = 'Memuat...';
+            }
+
+            try {
+                const res = await fetch(`{{ route('siswa.logbook.detail', [], false) }}?date=${dateStr}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                currentLoadedLogbookData = data;
+
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (bodyEl) bodyEl.classList.remove('hidden');
+
+                renderLogbookDetail(data);
+            } catch (err) {
+                console.error('Error fetching logbook detail:', err);
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (bodyEl) bodyEl.classList.remove('hidden');
+                if (statusBadgeEl) {
+                    statusBadgeEl.textContent = 'Gagal Memuat';
+                    statusBadgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200';
+                }
+            }
+        }
+
+        function renderLogbookDetail(data) {
+            const dateFormattedEl = document.getElementById('logbookDetailDateFormatted');
+            const statusBadgeEl = document.getElementById('logbookDetailStatusBadge');
+            const alertRejected = document.getElementById('logbookAlertRejected');
+            const noteRejected = document.getElementById('logbookRejectedNote');
+            const alertApproved = document.getElementById('logbookAlertApproved');
+            const metaApproved = document.getElementById('logbookApprovedMeta');
+            const alertLocked = document.getElementById('logbookAlertLocked');
+            const lockReasonText = document.getElementById('logbookLockedReason');
+
+            const readonlySection = document.getElementById('logbookReadonlySection');
+            const readonlyActivity = document.getElementById('logbookReadonlyActivity');
+            const readonlyResult = document.getElementById('logbookReadonlyResult');
+            const readonlyResultWrapper = document.getElementById('logbookReadonlyResultWrapper');
+            const editActionWrapper = document.getElementById('logbookEditActionWrapper');
+
+            const formSection = document.getElementById('logbookFormSection');
+            const formDateInput = document.getElementById('logbookFormDateInput');
+            const inputActivity = document.getElementById('logbookInputActivity');
+            const inputResult = document.getElementById('logbookInputResult');
+            const btnCancelEdit = document.getElementById('btnCancelLogbookEdit');
+            const btnSubmitLabel = document.getElementById('btnSubmitLogbookLabel');
+
+            const emptyLockedSection = document.getElementById('logbookEmptyLockedSection');
+            const emptyLockedReason = document.getElementById('logbookEmptyLockedReason');
+
+            if (dateFormattedEl) dateFormattedEl.textContent = data.date_formatted;
+
+            // Reset visibility
+            alertRejected?.classList.add('hidden');
+            alertApproved?.classList.add('hidden');
+            alertLocked?.classList.add('hidden');
+            readonlySection?.classList.add('hidden');
+            formSection?.classList.add('hidden');
+            emptyLockedSection?.classList.add('hidden');
+
+            const hasLogbook = data.exists && data.logbook;
+
+            // Status Badge
+            if (hasLogbook) {
+                statusBadgeEl.textContent = data.logbook.status_label;
+                statusBadgeEl.className = `text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${data.logbook.status_badge}`;
+
+                if (data.logbook.status === 'rejected') {
+                    alertRejected?.classList.remove('hidden');
+                    if (noteRejected) noteRejected.textContent = data.logbook.review_note || 'logbook ditolak tanpa catatan.';
+                } else if (data.logbook.status === 'approved') {
+                    alertApproved?.classList.remove('hidden');
+                    if (metaApproved) {
+                        metaApproved.textContent = `Disetujui oleh ${data.logbook.reviewed_by}` + (data.logbook.reviewed_at ? ` · ${data.logbook.reviewed_at}` : '');
+                    }
+                }
+            } else {
+                statusBadgeEl.textContent = 'Belum Diisi';
+                statusBadgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200';
+            }
+
+            // Set Form Data
+            if (formDateInput) formDateInput.value = data.date;
+            if (inputActivity) inputActivity.value = hasLogbook ? (data.logbook.activity || '') : '';
+            if (inputResult) inputResult.value = hasLogbook ? (data.logbook.result || '') : '';
+            updateLogbookCounter('logbookInputActivity', 'logbookActivityCounter', 2000);
+            updateLogbookCounter('logbookInputResult', 'logbookResultCounter', 2000);
+
+            // Lock notification
+            if (data.lock_reason && (!hasLogbook || data.logbook.status !== 'approved')) {
+                alertLocked?.classList.remove('hidden');
+                if (lockReasonText) lockReasonText.textContent = data.lock_reason;
+            }
+
+            if (hasLogbook) {
+                readonlySection?.classList.remove('hidden');
+                if (readonlyActivity) readonlyActivity.textContent = data.logbook.activity || '-';
+                if (readonlyResult) readonlyResult.textContent = data.logbook.result || '-';
+                if (readonlyResultWrapper) {
+                    readonlyResultWrapper.classList.toggle('hidden', !data.logbook.result);
+                }
+
+                if (data.can_edit) {
+                    editActionWrapper?.classList.remove('hidden');
+                    if (btnSubmitLabel) btnSubmitLabel.textContent = 'Perbarui Logbook';
+                    btnCancelEdit?.classList.remove('hidden');
+                } else {
+                    editActionWrapper?.classList.add('hidden');
+                }
+            } else {
+                if (data.can_edit) {
+                    formSection?.classList.remove('hidden');
+                    btnCancelEdit?.classList.add('hidden');
+                    if (btnSubmitLabel) btnSubmitLabel.textContent = 'Simpan Logbook';
+                } else {
+                    emptyLockedSection?.classList.remove('hidden');
+                    if (emptyLockedReason) emptyLockedReason.textContent = data.lock_reason || 'Belum ada catatan logbook yang diisi untuk tanggal ini.';
+                }
+            }
+        }
+
+        function showLogbookFormMode() {
+            document.getElementById('logbookReadonlySection')?.classList.add('hidden');
+            document.getElementById('logbookFormSection')?.classList.remove('hidden');
+        }
+
+        function cancelLogbookFormMode() {
+            document.getElementById('logbookFormSection')?.classList.add('hidden');
+            document.getElementById('logbookReadonlySection')?.classList.remove('hidden');
+        }
+
+        function updateLogbookCounter(inputId, counterId, max = 2000) {
+            const input = document.getElementById(inputId);
+            const counter = document.getElementById(counterId);
+            if (input && counter) {
+                counter.textContent = `${input.value.length}/${max}`;
+            }
+        }
+
+        function bindLogbookTextareaCounters() {
+            ['logbookInputActivity', 'logbookInputResult'].forEach(id => {
+                const input = document.getElementById(id);
+                if (!input) return;
+                const counterId = id === 'logbookInputActivity' ? 'logbookActivityCounter' : 'logbookResultCounter';
+                input.addEventListener('input', () => updateLogbookCounter(id, counterId, 2000));
+            });
+        }
+
+        function bindLogbookFormSubmit() {
+            const form = document.getElementById('formSubmitLogbook');
+            if (!form || form.dataset.bound === 'true') return;
+            form.dataset.bound = 'true';
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const submitBtn = document.getElementById('btnSubmitLogbookForm');
+                const origHtml = submitBtn ? submitBtn.innerHTML : '';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>Menyimpan...</span>';
+                }
+
+                showLoading('Menyimpan Logbook...', 'Sedang memproses catatan kegiatan Anda...', 'upload');
+
+                try {
+                    const formData = new FormData(form);
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    });
+
+                    const json = await res.json();
+                    hideLoading();
+
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = origHtml;
+                    }
+
+                    if (json.success) {
+                        if (json.date && json.logbook) {
+                            logbookMonthCache[json.date] = json.logbook.status;
+                            renderLogbookCalendar(currentLogbookDate.getFullYear(), currentLogbookDate.getMonth() + 1);
+                        }
+                        await fetchLogbookDetail(json.date || selectedLogbookDateStr);
+                        alert(json.message || 'Logbook berhasil disimpan!');
+                    } else {
+                        alert(json.message || 'Gagal menyimpan logbook. Periksa kembali isian Anda.');
+                    }
+                } catch (err) {
+                    hideLoading();
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = origHtml;
+                    }
+                    console.error('Error submitting logbook:', err);
+                    form.submit();
+                }
+            });
+        }
+
+        // ================= LOGIKA PROGRES BERKAS BULANAN =================
+        function openUploadProgresModal(year, month, monthName, isReupload = false, currentStatus = '') {
+            const inputYear = document.getElementById('progresInputYear');
+            const inputMonth = document.getElementById('progresInputMonth');
+            const title = document.getElementById('modalProgresTitle');
+            const subtitle = document.getElementById('modalProgresSubtitle');
+            const submitLabel = document.getElementById('btnSubmitProgresLabel');
+            const alertBox = document.getElementById('modalProgresReuploadAlert');
+            const fileInput = document.getElementById('progresFileInput');
+            const notesInput = document.getElementById('progresNotesInput');
+            const modal = document.getElementById('modalUploadProgres');
+
+            if (inputYear) inputYear.value = year;
+            if (inputMonth) inputMonth.value = month;
+            if (title) {
+                title.textContent = isReupload
+                    ? `Upload Ulang Berkas - ${monthName}`
+                    : `Upload Berkas Logbook - ${monthName}`;
+            }
+            if (subtitle) subtitle.textContent = `Periode Bulan: ${monthName}`;
+            if (submitLabel) {
+                submitLabel.textContent = isReupload
+                    ? 'Perbarui & Simpan Berkas'
+                    : 'Unggah Berkas';
+            }
+
+            if (alertBox) {
+                if (isReupload) {
+                    alertBox.classList.remove('hidden');
+                } else {
+                    alertBox.classList.add('hidden');
+                }
+            }
+
+            if (fileInput) fileInput.value = '';
+            if (notesInput) notesInput.value = '';
+
+            modal?.classList.remove('hidden');
+        }
+
+        function closeUploadProgresModal() {
+            const modal = document.getElementById('modalUploadProgres');
+            modal?.classList.add('hidden');
+        }
+
+        async function loadProgresData() {
+            const container = document.getElementById('progresListContainer');
+            if (!container) return;
+
+            try {
+                const response = await fetch(`{{ route('siswa.progres.data') }}`);
+                if (!response.ok) throw new Error('Gagal memuat data progres');
+                const data = await response.json();
+                renderProgresList(data);
+            } catch (err) {
+                console.error('Error fetching progress data:', err);
+            }
+        }
+
+        function renderProgresList(data) {
+            const subtitle = document.getElementById('progresSummarySubtitle');
+            if (subtitle) {
+                subtitle.textContent = `${data.total_approved} dari ${data.total_months} berkas telah disetujui (ACC)`;
+            }
+            const ratio = document.getElementById('progresSummaryRatio');
+            if (ratio) {
+                ratio.textContent = data.total_months > 0 && data.total_approved === data.total_months ? 'Lengkap (ACC)' : 'Dalam Proses';
+            }
+
+            const container = document.getElementById('progresListContainer');
+            if (!container) return;
+
+            if (!data.months || data.months.length === 0) {
+                container.innerHTML = `
+                    <div class="py-10 text-center text-gray-400 space-y-2">
+                        <i class="fa-solid fa-calendar-xmark text-3xl text-gray-300"></i>
+                        <h5 class="text-xs font-bold text-gray-600">Periode Magang Belum Ditetapkan</h5>
+                        <p class="text-[11px] text-gray-400 max-w-sm mx-auto">
+                            Tanggal mulai dan selesai magang belum diatur oleh admin/pegawai.
+                        </p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = data.months.map(m => {
+                const noteHtml = m.notes ? `<p class="text-[11px] text-gray-500 italic px-1">"${escapeHtml(m.notes)}"</p>` : '';
+                const feedbackHtml = (m.status === 'rejected' && m.feedback) ? `
+                    <div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 space-y-1">
+                        <strong class="flex items-center gap-1.5 font-bold">
+                            <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
+                            <span>Catatan Perbaikan Pegawai:</span>
+                        </strong>
+                        <p class="text-rose-700 text-[11px] leading-relaxed">${escapeHtml(m.feedback)}</p>
+                    </div>` : '';
+
+                const fileInfoHtml = m.has_uploaded ? `
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between text-xs gap-3">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <i class="fa-solid fa-file-pdf text-rose-500 text-base shrink-0"></i>
+                            <div class="truncate">
+                                <span class="font-semibold text-gray-800 block truncate text-xs">${escapeHtml(m.file_name)}</span>
+                                <span class="text-[10px] text-gray-400 block">${m.file_size_formatted} · Diunggah: ${m.uploaded_at}</span>
+                            </div>
+                        </div>
+                        <a href="${m.file_url}" target="_blank"
+                            class="px-2.5 py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-[11px] font-semibold transition shrink-0 flex items-center gap-1 shadow-2xs">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                            <span>Lihat</span>
+                        </a>
+                    </div>` : '';
+
+                let statusHelpText = '';
+                if (m.status === 'approved') statusHelpText = '<i class="fa-solid fa-circle-check text-emerald-500"></i> Berkas telah diverifikasi & disetujui.';
+                else if (m.status === 'pending') statusHelpText = '<i class="fa-solid fa-clock text-amber-500"></i> Menunggu pengecekan oleh pegawai.';
+                else if (m.status === 'rejected') statusHelpText = '<i class="fa-solid fa-triangle-exclamation text-rose-500"></i> Perlu perbaikan berkas.';
+                else statusHelpText = '<i class="fa-solid fa-circle-info text-gray-400"></i> Silakan upload berkas bertandatangan.';
+
+                const btnHtml = !m.has_uploaded
+                    ? `<button type="button" onclick="openUploadProgresModal(${m.year}, ${m.month}, '${escapeHtml(m.month_name)}', false)"
+                        class="px-3.5 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95">
+                        <i class="fa-solid fa-cloud-arrow-up text-[11px]"></i>
+                        <span>Upload Berkas</span>
+                    </button>`
+                    : `<button type="button" onclick="openUploadProgresModal(${m.year}, ${m.month}, '${escapeHtml(m.month_name)}', true, '${m.status}')"
+                        class="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold transition flex items-center gap-1.5 active:scale-95">
+                        <i class="fa-solid fa-arrow-rotate-right text-[11px]"></i>
+                        <span>Upload Ulang</span>
+                    </button>`;
+
+                return `
+                    <div class="p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition bg-white shadow-xs space-y-3" id="progres-card-${m.year}-${m.month}">
+                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-full bg-gray-100 text-gray-700 font-bold text-[11px] flex items-center justify-center shrink-0">
+                                    ${m.index}
+                                </span>
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-900">${escapeHtml(m.month_name)}</h4>
+                                    <span class="text-[10px] text-gray-400">Bulan ke-${m.index} Masa Magang</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${m.status_badge}">
+                                ${m.status_label}
+                            </span>
+                        </div>
+                        ${feedbackHtml}
+                        ${fileInfoHtml}
+                        ${noteHtml}
+                        <div class="flex items-center justify-between pt-1 border-t border-gray-50">
+                            <span class="text-[10px] text-gray-400">${statusHelpText}</span>
+                            <div>${btnHtml}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function showProfileModal() {
@@ -1665,8 +2182,13 @@
             fetchRiwayatData(currentRiwayatDate.getFullYear(), currentRiwayatDate.getMonth() + 1);
 
             // Tab awal: presensi, riwayat, atau logbook (mis. setelah menyimpan logbook)
-            switchAbsenTab(@json($initialTab ?? 'absen'));
-            bindLogbookCounters();
+            const initTabName = @json($initialTab ?? 'absen');
+            switchAbsenTab(initTabName);
+            if (initTabName === 'logbook') {
+                initLogbookTab(@json(request()->query('date')));
+            } else if (initTabName === 'progres') {
+                loadProgresData();
+            }
 
             // Fetch Realtime Geolocation GPS awal
             fetchUserGps();
