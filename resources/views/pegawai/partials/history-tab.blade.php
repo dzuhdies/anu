@@ -6,18 +6,13 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
                 <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left text-teal-600"></i>
-                    <span>Riwayat & Alumni Peserta Magang BPS</span>
+                    <span>Riwayat Peserta Magang</span>
                 </h3>
                 <p class="text-xs text-gray-500 mt-0.5">
                     Daftar siswa/mahasiswa yang pernah magang di BPS Kota Malang. Periksa detail pendaftaran, riwayat presensi harian, dan logbook kegiatan.
                 </p>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-semibold px-3 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-                    <strong id="historyTotalCountBadge">{{ count($historyStudents ?? []) }}</strong> Siswa Tercatat
-                </span>
-            </div>
+            
         </div>
 
         <!-- Filter Controls -->
@@ -30,21 +25,7 @@
                     class="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-gray-900 bg-gray-50/50 focus:bg-white text-gray-800 transition">
             </div>
 
-            <!-- Status Filter Pills -->
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-                <button type="button" onclick="setHistoryFilter('all')" id="btn-hist-all"
-                    class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-900 text-white transition shadow-xs">
-                    Semua ({{ count($historyStudents ?? []) }})
-                </button>
-                <button type="button" onclick="setHistoryFilter('ended')" id="btn-hist-ended"
-                    class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 transition">
-                    Selesai ({{ collect($historyStudents ?? [])->where('is_ended', true)->count() }})
-                </button>
-                <button type="button" onclick="setHistoryFilter('active')" id="btn-hist-active"
-                    class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600 hover:text-gray-900 transition">
-                    Sedang Magang ({{ collect($historyStudents ?? [])->where('is_ended', false)->count() }})
-                </button>
-            </div>
+        
         </div>
     </div>
 
@@ -54,11 +35,10 @@
             <table class="w-full text-xs text-left text-gray-600 responsive-table">
                 <thead class="text-[11px] text-gray-400 uppercase bg-[#fafafa] font-semibold border-b border-gray-100">
                     <tr>
-                        <th scope="col" class="px-5 py-3.5">Nama & Kontak Siswa</th>
+                        <th scope="col" class="px-5 py-3.5">Nama</th>
                         <th scope="col" class="px-5 py-3.5">Asal Instansi & Jurusan</th>
                         <th scope="col" class="px-5 py-3.5">Periode & Divisi</th>
                         <th scope="col" class="px-5 py-3.5 text-center">Status</th>
-                        <th scope="col" class="px-5 py-3.5 text-center">Ringkasan Aktivitas</th>
                         <th scope="col" class="px-5 py-3.5 text-right">Rincian & Riwayat</th>
                     </tr>
                 </thead>
@@ -81,27 +61,14 @@
                             <!-- Nama & Kontak -->
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-lg {{ $hist['is_ended'] ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-teal-50 text-teal-700 border border-teal-200' }} font-bold flex items-center justify-center text-xs shrink-0">
+                                    <div class="w-9 h-9 rounded-lg {{ $hist['is_ended'] ? 'bg-amber-50 text-black-700 border border-black-200' : 'bg-black-50 text-teal-700 border border-black-200' }} font-bold flex items-center justify-center text-xs shrink-0">
                                         {{ strtoupper(substr($hist['name'], 0, 1)) }}
                                     </div>
                                     <div class="min-w-0">
                                         <div class="font-bold text-gray-900 text-sm flex items-center gap-1.5">
                                             <span>{{ $hist['name'] }}</span>
                                         </div>
-                                        <div class="text-[11px] text-gray-500 flex items-center gap-2 mt-0.5">
-                                            <span><i class="fa-regular fa-envelope text-gray-400 mr-1"></i>{{ $hist['email'] }}</span>
-                                        </div>
-                                        <div class="text-[11px] text-gray-500 mt-0.5">
-                                            @if($hist['phone'] && $hist['phone'] !== '-')
-                                                <a href="https://wa.me/{{ $phoneClean }}" target="_blank"
-                                                    class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium hover:underline">
-                                                    <i class="fa-brands fa-whatsapp text-xs"></i>
-                                                    <span>{{ $hist['phone'] }}</span>
-                                                </a>
-                                            @else
-                                                <span class="text-gray-400"><i class="fa-solid fa-phone text-[10px] mr-1"></i>-</span>
-                                            @endif
-                                        </div>
+                                
                                     </div>
                                 </div>
                             </td>
@@ -109,7 +76,6 @@
                             <!-- Asal Instansi & Jurusan -->
                             <td class="px-5 py-4">
                                 <div class="font-bold text-gray-900 text-xs">{{ $hist['institution'] }}</div>
-                                <div class="text-[11px] text-gray-500 mt-0.5">{{ $hist['major'] }}</div>
                             </td>
 
                             <!-- Periode & Divisi -->
@@ -133,24 +99,7 @@
                                     </span>
                                 @endif
                             </td>
-
-                            <!-- Ringkasan Presensi & Logbook -->
-                            <td class="px-5 py-4 text-center whitespace-nowrap">
-                                <div class="inline-flex items-center gap-2">
-                                    <div class="px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px]">
-                                        <span class="text-gray-400 block font-semibold">Kehadiran</span>
-                                        <strong class="text-emerald-700 font-bold">{{ $hist['stats']['persen_hadir'] }}%</strong>
-                                    </div>
-                                    <div class="px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px]">
-                                        <span class="text-gray-400 block font-semibold">Logbook</span>
-                                        <strong class="text-gray-900 font-bold">{{ $hist['stats']['total_logbook'] }} Hari</strong>
-                                    </div>
-                                    <div class="px-2 py-1 rounded-md bg-gray-50 border border-gray-100 text-[10px]">
-                                        <span class="text-gray-400 block font-semibold">Berkas TTD</span>
-                                        <strong class="text-teal-700 font-bold">{{ $hist['stats']['approved_progres'] }} Bulan</strong>
-                                    </div>
-                                </div>
-                            </td>
+                            
 
                             <!-- Tindakan / Rincian -->
                             <td class="px-5 py-4 text-right whitespace-nowrap">
@@ -586,7 +535,11 @@
             msgEl.classList.remove('text-amber-950');
         }
 
-        openModal('historyPendaftaranModal');
+        if (typeof showModal === 'function') {
+            showModal('historyPendaftaranModal');
+        } else {
+            document.getElementById('historyPendaftaranModal')?.classList.remove('hidden');
+        }
     }
 
     function openHistoryPresensiModal(studentId) {
@@ -628,7 +581,11 @@
             });
         }
 
-        openModal('historyPresensiModal');
+        if (typeof showModal === 'function') {
+            showModal('historyPresensiModal');
+        } else {
+            document.getElementById('historyPresensiModal')?.classList.remove('hidden');
+        }
     }
 
     function openHistoryLogbookModal(studentId) {
@@ -687,6 +644,10 @@
             });
         }
 
-        openModal('historyLogbookModal');
+        if (typeof showModal === 'function') {
+            showModal('historyLogbookModal');
+        } else {
+            document.getElementById('historyLogbookModal')?.classList.remove('hidden');
+        }
     }
 </script>

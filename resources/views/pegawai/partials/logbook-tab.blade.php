@@ -613,8 +613,6 @@
         </form>
     </div>
 </div>
-    </div>
-</div>
 
 <script>
     const logbookData = @json($logbookPayload);
