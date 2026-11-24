@@ -773,11 +773,24 @@ class AdminController extends Controller
             $catatan = $request->input('catatan') ?: $request->input('catatan_admin', 'Permohonan pengunduran diri telah diverifikasi dan disetujui.');
             $adminUserId = $currentUser ? $currentUser->id : null;
 
+            $history = $pendaftaran->resignation_history ?? [];
+            $history[] = [
+                'action' => 'approved',
+                'status_label' => 'Pengunduran Diri Disetujui (ACC)',
+                'actor' => Auth::user()->username ?? 'Pegawai',
+                'role' => Auth::user()->role ?? 'pegawai',
+                'reason' => $pendaftaran->resignation_reason,
+                'proof' => $pendaftaran->resignation_proof,
+                'note' => $catatan,
+                'created_at' => now()->translatedFormat('d F Y, H:i'),
+            ];
+
             $pendaftaran->update([
                 'status' => 'resigned',
                 'resignation_approved_by' => $adminUserId,
                 'resignation_approved_at' => now(),
                 'resignation_admin_note' => $catatan,
+                'resignation_history' => $history,
             ]);
 
             // Bebaskan kuota dengan menghapus SiswaProfile siswa terkait
@@ -861,11 +874,24 @@ class AdminController extends Controller
 
         $adminUserId = $currentUser ? $currentUser->id : null;
 
+        $history = $pendaftaran->resignation_history ?? [];
+        $history[] = [
+            'action' => 'rejected',
+            'status_label' => 'Pengunduran Diri Ditolak Pegawai',
+            'actor' => Auth::user()->username ?? 'Pegawai',
+            'role' => Auth::user()->role ?? 'pegawai',
+            'reason' => $pendaftaran->resignation_reason,
+            'proof' => $pendaftaran->resignation_proof,
+            'note' => $catatan,
+            'created_at' => now()->translatedFormat('d F Y, H:i'),
+        ];
+
         $pendaftaran->update([
             'status' => 'approved',
             'resignation_approved_by' => $adminUserId,
             'resignation_approved_at' => now(),
             'resignation_admin_note' => $catatan,
+            'resignation_history' => $history,
         ]);
 
         LogHelper::success($request, 'Tolak Pengunduran Diri Berhasil', "Pengguna " . Auth::user()->username . " menolak permohonan pengunduran diri ID #{$pendaftaran->id}. Status magang tetap disetujui.");
@@ -875,6 +901,116 @@ class AdminController extends Controller
         }
 
         return back()->with('success', 'Permohonan pengunduran diri telah DITOLAK. Status magang peserta tetap disetujui.');
+    }
+
+    /**
+     * Berhentikan Peserta Magang di Tengah-tengah Masa Magang dengan Alasan Tertentu
+     */
+    public function berhentikanPeserta(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'alasan_pemberhentian' => 'required|string|min:5|max:1000',
+        ], [
+            'alasan_pemberhentian.required' => 'Alasan pemberhentian peserta magang wajib diisi.',
+            'alasan_pemberhentian.min' => 'Alasan pemberhentian minimal 5 karakter.',
+        ]);
+
+        if ($validator->fails()) {
+            LogHelper::invalid($request, 'Pemberhentian Siswa (Salah Isi)', $validator->errors());
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'errors' => $validator->errors(), 'message' => $validator->errors()->first()], 422);
+            }
+            return back()->withErrors($validator)->withInput()->with('error', $validator->errors()->first());
+        }
+
+        $pendaftaran = InternshipApplication::with(['division', 'anggotas', 'members'])->findOrFail($id);
+
+        $currentUser = Auth::user();
+        if ($currentUser && $currentUser->role === 'pegawai') {
+            $pegawaiProfile = $currentUser->pegawaiProfile;
+            if ($pegawaiProfile && $pegawaiProfile->divisi_id && (int)$pendaftaran->divisi_id !== (int)$pegawaiProfile->divisi_id) {
+                return back()->with('error', "Akses Ditolak: Anda tidak berwenang memberhentikan peserta di luar divisi Anda.");
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            $alasan = $request->input('alasan_pemberhentian');
+            $actorName = $currentUser ? ($currentUser->username ?? 'Pegawai/Admin') : 'Pegawai/Admin';
+            $actorRole = $currentUser ? ucfirst($currentUser->role) : 'Pegawai';
+
+            $history = $pendaftaran->resignation_history ?? [];
+            $history[] = [
+                'action' => 'terminated',
+                'status_label' => 'Diberhentikan oleh ' . ($actorRole === 'Admin' ? 'Admin BPS' : 'Pegawai/Pembimbing BPS'),
+                'actor' => "{$actorName} ({$actorRole})",
+                'role' => $currentUser->role ?? 'pegawai',
+                'reason' => $alasan,
+                'note' => $alasan,
+                'created_at' => now()->translatedFormat('d F Y, H:i'),
+            ];
+
+            $pendaftaran->update([
+                'status' => 'terminated',
+                'resignation_admin_note' => $alasan,
+                'resignation_history' => $history,
+                'end_date' => now()->toDateString(),
+            ]);
+
+            $allUserIds = [];
+            if ($pendaftaran->leader_user_id) $allUserIds[] = $pendaftaran->leader_user_id;
+            if ($pendaftaran->ketua_user_id) $allUserIds[] = $pendaftaran->ketua_user_id;
+            foreach ($pendaftaran->members as $m) {
+                if ($m->user_id) $allUserIds[] = $m->user_id;
+            }
+            foreach ($pendaftaran->anggotas as $ang) {
+                if ($ang->user_id) $allUserIds[] = $ang->user_id;
+            }
+            $allUserIds = array_unique(array_filter($allUserIds));
+
+            foreach ($allUserIds as $uId) {
+                StudentProfile::where('user_id', $uId)->update([
+                    'end_date' => now()->subDay()->toDateString(),
+                ]);
+                User::where('id', $uId)->update(['role' => 'calon_peserta']);
+            }
+
+            DB::commit();
+
+            LogHelper::warning($request, 'Pemberhentian Siswa Magang', "{$actorName} ({$actorRole}) memberhentikan peserta magang ID #{$pendaftaran->id}. Alasan: {$alasan}");
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => "Peserta magang telah resmi diberhentikan dari program magang. Alasan pemberhentian telah tercatat di riwayat."]);
+            }
+
+            return back()->with('success', "Peserta magang telah resmi diberhentikan dari program magang. Alasan pemberhentian telah tercatat di riwayat.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            LogHelper::fail($request, 'Pemberhentian Siswa Error', $e->getMessage());
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal memberhentikan peserta: ' . $e->getMessage()], 422);
+            }
+            return back()->with('error', 'Gagal memberhentikan peserta: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Berhentikan Siswa berdasarkan StudentProfile ID
+     */
+    public function berhentikanSiswa(Request $request, $id)
+    {
+        $student = StudentProfile::findOrFail($id);
+        $user = $student->user;
+        $application = $user ? ($user->activeApplication() ?: $user->ledApplications()->latest()->first() ?: $user->memberApplications()->latest()->first()) : null;
+
+        if ($application) {
+            return $this->berhentikanPeserta($request, $application->id);
+        }
+
+        $student->update(['end_date' => now()->subDay()->toDateString()]);
+        $user?->update(['role' => 'calon_peserta']);
+
+        return back()->with('success', "Peserta magang {$student->full_name} telah resmi diberhentikan.");
     }
 
     /**

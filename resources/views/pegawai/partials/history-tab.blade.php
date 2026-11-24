@@ -89,12 +89,20 @@
 
                             <!-- Status -->
                             <td class="px-5 py-4 text-center whitespace-nowrap">
-                                @if($hist['is_ended'])
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                @if(isset($hist['status']) && $hist['status'] === 'terminated')
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                        <i class="fa-solid fa-user-xmark text-[10px]"></i> Diberhentikan
+                                    </span>
+                                @elseif(isset($hist['status']) && $hist['status'] === 'resigned')
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                                        <i class="fa-solid fa-person-walking-dashed-line-arrow-right text-[10px]"></i> Mengundurkan Diri
+                                    </span>
+                                @elseif($hist['is_ended'])
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                         <i class="fa-solid fa-graduation-cap text-[10px]"></i> Selesai Magang
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                                         <i class="fa-solid fa-circle-check text-[10px]"></i> Sedang Berjalan
                                     </span>
                                 @endif
@@ -247,6 +255,41 @@
                 <p class="text-[11px] text-amber-950 italic leading-relaxed" id="histPendFinalMessage">
                     Belum ada pesan apresiasi khusus yang disimpan untuk siswa ini.
                 </p>
+            </div>
+
+            <!-- Informasi Sertifikat Magang Alumni -->
+            <div id="histPendCertBox" class="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-award text-emerald-600"></i>
+                        <span>Sertifikat Resmi Magang BPS</span>
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800" id="histPendCertBadge">Diterbitkan</span>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <strong class="text-xs text-gray-900 font-mono block" id="histPendCertNumber">-</strong>
+                        <span class="text-[11px] text-gray-500" id="histPendCertPredicate">Predikat: -</span>
+                    </div>
+                    <a href="#" id="histPendCertLink" target="_blank" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition flex items-center gap-1.5 self-start sm:self-auto shadow-2xs">
+                        <i class="fa-solid fa-print text-[11px]"></i>
+                        <span>Buka Sertifikat</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Riwayat Pengunduran Diri (Jika Pernah Mengajukan) -->
+            <div id="histPendResignationBox" class="hidden p-3.5 bg-rose-50/70 rounded-xl border border-rose-200 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-xmark text-rose-600"></i>
+                        <span>Catatan Riwayat Pengunduran Diri</span>
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800" id="histPendResignBadge">Tercatat</span>
+                </div>
+                <div id="histPendResignList" class="space-y-2 text-xs">
+                    <!-- Populated via JS -->
+                </div>
             </div>
         </div>
 
@@ -533,6 +576,67 @@
             msgEl.textContent = 'Belum ada pesan khusus yang dituliskan pegawai untuk siswa ini.';
             msgEl.classList.add('italic', 'text-gray-400');
             msgEl.classList.remove('text-amber-950');
+        }
+
+        // Sertifikat Alumni
+        const certBox = document.getElementById('histPendCertBox');
+        const certNumber = document.getElementById('histPendCertNumber');
+        const certPredicate = document.getElementById('histPendCertPredicate');
+        const certBadge = document.getElementById('histPendCertBadge');
+        const certLink = document.getElementById('histPendCertLink');
+
+        if (student.has_certificate) {
+            certBox?.classList.remove('hidden');
+            if (certNumber) certNumber.textContent = `No: ${student.certificate_number}`;
+            if (certPredicate) certPredicate.textContent = `Predikat: ${student.certificate_predicate || 'Baik'}`;
+            if (certBadge) certBadge.textContent = 'Resmi Diterbitkan';
+            if (certLink) {
+                certLink.href = student.certificate_url;
+                certLink.classList.remove('pointer-events-none', 'opacity-50');
+            }
+        } else {
+            if (certNumber) certNumber.textContent = 'Belum diterbitkan';
+            if (certPredicate) certPredicate.textContent = 'Siswa belum memiliki sertifikat resmi.';
+            if (certBadge) certBadge.textContent = 'Belum Terbit';
+            if (certLink) {
+                certLink.href = '#';
+                certLink.classList.add('pointer-events-none', 'opacity-50');
+            }
+        }
+
+        // Riwayat Pengunduran Diri
+        const resignBox = document.getElementById('histPendResignationBox');
+        const resignList = document.getElementById('histPendResignList');
+        const resignBadge = document.getElementById('histPendResignBadge');
+
+        if (student.resignation_history && student.resignation_history.length > 0) {
+            resignBox?.classList.remove('hidden');
+            resignList.innerHTML = '';
+            student.resignation_history.forEach(ev => {
+                const item = document.createElement('div');
+                item.className = 'p-3 bg-white rounded-xl border border-rose-100 space-y-1.5 shadow-2xs';
+                
+                const isRejected = ev.action === 'rejected';
+                const isApproved = ev.action === 'approved';
+                const badgeCls = isApproved ? 'bg-emerald-100 text-emerald-800' : (isRejected ? 'bg-rose-100 text-rose-800' : 'bg-purple-100 text-purple-800');
+                
+                item.innerHTML = `
+                    <div class="flex items-center justify-between flex-wrap gap-1">
+                        <span class="font-bold text-gray-900 text-xs">${ev.status_label || (isApproved ? 'Pengunduran Diri Disetujui' : (isRejected ? 'Pengunduran Diri Ditolak Pegawai' : 'Permohonan Pengunduran Diri'))}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeCls}">${ev.created_at || '-'}</span>
+                    </div>
+                    ${ev.reason ? `<p class="text-[11px] text-gray-700"><strong>Alasan Peserta:</strong> "${ev.reason}"</p>` : ''}
+                    ${ev.note ? `<div class="p-2 bg-rose-50/80 rounded-lg border border-rose-100 text-[11px] text-rose-900"><strong>Catatan Balasan Pegawai / Admin:</strong> "${ev.note}"</div>` : ''}
+                    ${ev.proof ? `<div class="pt-0.5"><a href="${ev.proof}" target="_blank" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline font-medium"><i class="fa-solid fa-paperclip"></i> Lihat Berkas Bukti</a></div>` : ''}
+                `;
+                resignList.appendChild(item);
+            });
+            if (resignBadge) {
+                const latest = student.resignation_history[student.resignation_history.length - 1];
+                resignBadge.textContent = latest.action === 'approved' ? 'Disetujui' : (latest.action === 'rejected' ? 'Ditolak' : 'Diajukan');
+            }
+        } else {
+            resignBox?.classList.add('hidden');
         }
 
         if (typeof showModal === 'function') {

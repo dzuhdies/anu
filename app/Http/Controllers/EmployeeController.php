@@ -83,14 +83,28 @@ class EmployeeController extends Controller
             $displayMode = 'daily';
         }
 
-        $queryStudent = StudentProfile::query();
+        $todayDate = Carbon::today()->toDateString();
+
+        // Base student query: pastikan TIDAK PERNAH memuat user dengan role 'admin'
+        // dan jika pegawai memegang "Seluruh Divisi" (division_id null), jangan batasi building_id
+        $baseStudentQuery = StudentProfile::query()
+            ->whereHas('user', fn ($u) => $u->where('role', '!=', 'admin'));
+
         if ($employee && $employee->division_id) {
-            $queryStudent->where('division_id', $employee->division_id);
-        } elseif ($employee && $employee->building_id) {
-            $queryStudent->where('building_id', $employee->building_id);
+            $baseStudentQuery->where('division_id', $employee->division_id);
         }
 
-        $all_siswas = (clone $queryStudent)->with(['division', 'building', 'user.participantProfile'])->orderBy('full_name', 'asc')->get();
+        // Daftar Siswa Magang Aktif: hanya siswa yang belum selesai (end_date belum terlewat)
+        $all_siswas = (clone $baseStudentQuery)
+            ->where(function ($q) use ($todayDate) {
+                $q->whereNull('end_date')
+                  ->orWhereDate('end_date', '>=', $todayDate);
+            })
+            ->with(['division', 'building', 'user.participantProfile'])
+            ->orderBy('full_name', 'asc')
+            ->get();
+
+        $queryStudent = clone $baseStudentQuery;
 
         if ($displayMode === 'range') {
             $queryStudent->where(function ($q) use ($dari, $ke) {
@@ -116,7 +130,7 @@ class EmployeeController extends Controller
                 });
             });
         } else {
-            $targetDate = $dari;
+            $targetDate = $dari ?: $tanggal ?: $todayDate;
             $queryStudent->where(function ($q) use ($targetDate) {
                 $q->where(function ($periodQ) use ($targetDate) {
                     $periodQ->where('start_date', '<=', $targetDate)
@@ -151,7 +165,8 @@ class EmployeeController extends Controller
             ->get();
         $this->setStudentAbsensiPhotoUrls($siswas);
 
-        $applicationQuery = InternshipApplication::with(['division', 'divisi', 'members.user', 'anggotas.user', 'leader', 'ketua']);
+        $applicationQuery = InternshipApplication::with(['division', 'divisi', 'members.user', 'anggotas.user', 'leader', 'ketua'])
+            ->whereHas('leader', fn ($u) => $u->where('role', '!=', 'admin'));
         if ($employee && $employee->division_id) {
             $applicationQuery->where('division_id', $employee->division_id);
         }
@@ -172,8 +187,9 @@ class EmployeeController extends Controller
         $pendingCount = $pendaftarans->where('status', 'pending')->count();
         $divisis = Division::where('is_active', true)->orderBy('name')->get();
 
-        // Logbook: jumlah yang menunggu review (dibatasi divisi pegawai bila ada)
-        $logbookQuery = \App\Models\Logbook::query();
+        // Logbook: jumlah yang menunggu review (dibatasi divisi pegawai bila ada, tanpa role admin)
+        $logbookQuery = \App\Models\Logbook::query()
+            ->whereHas('student.user', fn ($u) => $u->where('role', '!=', 'admin'));
         if ($employee && $employee->division_id) {
             $logbookQuery->whereHas('student', fn ($q) => $q->where('division_id', $employee->division_id));
         }
@@ -241,9 +257,14 @@ class EmployeeController extends Controller
 
         // Query berkas progres bulanan untuk review pegawai
         $progresQuery = StudentMonthlyProgress::with(['student.division', 'student.building', 'reviewer'])
+            ->whereHas('student.user', fn ($u) => $u->where('role', '!=', 'admin'))
             ->orderByDesc('year')
             ->orderByDesc('month')
             ->orderByDesc('updated_at');
+
+        if ($employee && $employee->division_id) {
+            $progresQuery->whereHas('student', fn ($q) => $q->where('division_id', $employee->division_id));
+        }
 
         if ($request->filled('q')) {
             $term = '%' . trim($request->q) . '%';
@@ -260,7 +281,12 @@ class EmployeeController extends Controller
         $monthlyProgressPendingCount = StudentMonthlyProgress::where('status', StudentMonthlyProgress::STATUS_PENDING)->count();
 
         // Data Peserta Magang Aktif & Progres Bulanan Terstruktur (Layout Sidebar + Detail)
-        $activeStudentsForProgress = (clone $queryStudent)
+        // Bebas dari filter tanggal rekap absensi & tidak dibatasi building jika "Seluruh Divisi"
+        $activeStudentsForProgress = (clone $baseStudentQuery)
+            ->where(function ($q) use ($todayDate) {
+                $q->whereNull('end_date')
+                  ->orWhereDate('end_date', '>=', $todayDate);
+            })
             ->with(['division', 'building', 'user.participantProfile', 'monthlyProgresses.reviewer'])
             ->orderBy('full_name', 'asc')
             ->get();
@@ -310,6 +336,8 @@ class EmployeeController extends Controller
             $totalMonths = count($months);
             $isComplete = ($totalMonths > 0 && $approvedCount === $totalMonths);
 
+            $cert = $st->certificate ?? $st->user?->certificate;
+
             return [
                 'id' => $st->id,
                 'name' => $st->full_name,
@@ -326,32 +354,52 @@ class EmployeeController extends Controller
                 'is_complete' => $isComplete,
                 'final_message' => $st->final_message,
                 'save_message_url' => route('pegawai.siswa.final_message', $st->id),
+                'has_certificate' => (bool)$cert,
+                'certificate_id' => $cert?->id,
+                'certificate_number' => $cert?->certificate_number,
+                'certificate_url' => $cert ? route('sertifikat.show', $cert->id) : null,
+                'default_cert_number' => 'B-' . str_pad($st->id, 3, '0', STR_PAD_LEFT) . '/35730/KP.010/' . now()->format('m/Y'),
                 'months' => $months,
             ];
         });
 
-        // Data Riwayat Alumni Magang (History)
-        $todayDate = Carbon::today()->toDateString();
-        $historyQuery = StudentProfile::query();
-        if ($employee && $employee->division_id) {
-            $historyQuery->where('division_id', $employee->division_id);
-        } elseif ($employee && $employee->building_id) {
-            $historyQuery->where('building_id', $employee->building_id);
-        }
+        // Data Riwayat Alumni Magang (History) - HANYA yang sudah selesai magang
+        $historyQuery = (clone $baseStudentQuery)
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', $todayDate);
 
         $historyStudentsRaw = $historyQuery
             ->with([
                 'division',
                 'building',
                 'user.participantProfile',
+                'user.ledApplications',
+                'user.memberApplications',
                 'attendances.leaveType',
                 'logbooks',
-                'monthlyProgresses'
+                'monthlyProgresses',
+                'certificate',
             ])
             ->orderBy('end_date', 'desc')
             ->get();
 
         $historyStudents = $historyStudentsRaw->map(function ($st) use ($todayDate) {
+            $user = $st->user;
+            $app = $user ? ($user->activeApplication() ?: $user->ledApplications->first() ?: $user->memberApplications->first()) : null;
+            $cert = $st->certificate ?? $user?->certificate;
+
+            $rHistory = $app?->resignation_history ?? [];
+            if (empty($rHistory) && $app?->alasan_undur_diri) {
+                $rHistory[] = [
+                    'action' => $app->status === 'resigned' ? 'approved' : ($app->status === 'approved' ? 'rejected' : 'requested'),
+                    'status_label' => $app->status === 'resigned' ? 'Pengunduran Diri Disetujui' : ($app->status === 'approved' ? 'Pengunduran Diri Ditolak Pegawai' : 'Mengajukan Pengunduran Diri'),
+                    'reason' => $app->alasan_undur_diri,
+                    'proof' => $app->bukti_undur_diri ? (str_starts_with($app->bukti_undur_diri, 'http') ? $app->bukti_undur_diri : asset('storage/' . $app->bukti_undur_diri)) : null,
+                    'note' => $app->catatan_undur_diri_admin,
+                    'created_at' => $app->tgl_undur_diri ? $app->tgl_undur_diri->translatedFormat('d F Y, H:i') : '-',
+                ];
+            }
+
             $attendances = $st->attendances;
             $totalHari = $attendances->count();
             $totalHadir = $attendances->where('attendance_status', true)->count();
@@ -377,10 +425,17 @@ class EmployeeController extends Controller
                 'building' => $st->building?->name ?? 'Kantor BPS',
                 'start_date' => $st->start_date ? Carbon::parse($st->start_date)->format('d/m/Y') : '-',
                 'end_date' => $st->end_date ? Carbon::parse($st->end_date)->format('d/m/Y') : '-',
+                'status' => $app?->status ?? ($isEnded ? 'completed' : 'active'),
                 'is_ended' => $isEnded,
                 'cv_url' => $cvUrl,
                 'porto_url' => $portoUrl,
                 'final_message' => $st->final_message,
+                'has_certificate' => (bool)$cert && !in_array($app?->status, ['resigned', 'terminated']),
+                'certificate_id' => $cert?->id,
+                'certificate_number' => $cert?->certificate_number,
+                'certificate_predicate' => $cert?->predicate,
+                'certificate_url' => $cert ? route('sertifikat.show', $cert->id) : null,
+                'resignation_history' => $rHistory,
                 'stats' => [
                     'total_hari' => $totalHari,
                     'total_hadir' => $totalHadir,

@@ -92,6 +92,11 @@ class StudentProfile extends Model
         return $this->hasMany(Logbook::class, 'student_id');
     }
 
+    public function certificate(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Certificate::class, 'student_id');
+    }
+
     public function monthlyProgresses(): HasMany
     {
         return $this->hasMany(StudentMonthlyProgress::class, 'student_id');

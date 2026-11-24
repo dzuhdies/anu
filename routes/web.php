@@ -19,6 +19,7 @@ use App\Http\Controllers\GedungController;
 use App\Http\Controllers\JenisIzinController;
 use App\Http\Controllers\PendaftaranController;
 use App\Http\Controllers\StudentProgressController;
+use App\Http\Controllers\CertificateController;
 
 // Halaman Awal / Landing Page Portal Magang BPS Kota Malang
 Route::get('/', [LandingController::class, 'index'])->name('landing');
@@ -72,6 +73,9 @@ Route::middleware(['auth', 'role:admin,pegawai'])->group(function () {
     Route::post('/pendaftaran/{id}/reschedule', [AdminController::class, 'reschedulePendaftaran'])->name('admin.pendaftaran.reschedule');
     Route::post('/pendaftaran/{id}/approve-undur-diri', [AdminController::class, 'approveResignation'])->name('admin.pendaftaran.approve_undur_diri');
     Route::post('/pendaftaran/{id}/reject-undur-diri', [AdminController::class, 'rejectResignation'])->name('admin.pendaftaran.reject_undur_diri');
+    Route::post('/pendaftaran/{id}/berhentikan', [AdminController::class, 'berhentikanPeserta'])->name('admin.pendaftaran.berhentikan');
+    Route::post('/admin/pendaftaran/{id}/berhentikan', [AdminController::class, 'berhentikanPeserta']);
+    Route::post('/pegawai/siswa/{id}/berhentikan', [AdminController::class, 'berhentikanSiswa'])->name('pegawai.siswa.berhentikan');
     Route::post('/admin/pendaftaran/{id}/approve', [AdminController::class, 'approvePendaftaran']);
     Route::post('/admin/pendaftaran/{id}/reject', [AdminController::class, 'rejectPendaftaran']);
     Route::post('/admin/pendaftaran/{id}/reschedule', [AdminController::class, 'reschedulePendaftaran']);
@@ -103,10 +107,12 @@ Route::middleware(['auth', 'role:pegawai'])->group(function () {
     Route::get('/pegawai/siswa/{id}/progres', [StudentProgressController::class, 'getProgressForStudent'])->name('pegawai.siswa.progres');
     Route::post('/pegawai/progres/{progress}/approve', [StudentProgressController::class, 'approve'])->name('pegawai.progres.approve');
     Route::post('/pegawai/progres/{progress}/reject', [StudentProgressController::class, 'reject'])->name('pegawai.progres.reject');
+    Route::post('/pegawai/sertifikat/terbitkan', [CertificateController::class, 'issue'])->name('pegawai.sertifikat.terbitkan');
 });
 
 Route::middleware(['auth', 'role:siswa'])->group(function () {
     Route::get('/siswa/absen', [StudentController::class, 'absenForm'])->name('siswa.absen.form');
+    Route::get('/siswa/penyelesaian', [StudentController::class, 'penyelesaian'])->name('siswa.penyelesaian');
     Route::post('/siswa/absen-masuk', [StudentController::class, 'absenMasuk'])->name('siswa.absen.masuk');
     Route::post('/siswa/absen-keluar', [StudentController::class, 'absenKeluar'])->name('siswa.absen.keluar');
     Route::get('/siswa/riwayat', [StudentController::class, 'getRiwayat'])->name('siswa.riwayat');
@@ -135,6 +141,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/pendaftaran/{id}/reapply', [InternshipApplicationController::class, 'reapply'])->name('pendaftaran.reapply');
     Route::post('/pendaftaran/{id}/accept-reschedule', [InternshipApplicationController::class, 'acceptReschedule'])->name('pendaftaran.accept_reschedule');
     Route::post('/pendaftaran/{id}/reject-reschedule', [InternshipApplicationController::class, 'rejectReschedule'])->name('pendaftaran.reject_reschedule');
+    Route::get('/sertifikat/{id}', [CertificateController::class, 'show'])->name('sertifikat.show');
 });
 
 // Fallback langsung untuk melihat / download berkas storage publik (CV, Portofolio, Berkas Izin, Foto Absen)

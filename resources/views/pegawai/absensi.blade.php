@@ -226,7 +226,7 @@
                         <li>
                             <button onclick="showMainContent('siswa'); closeSidebarMobile();" id="side-nav-siswa"
                                 class="sidebar-nav-link w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-user-graduate w-4 text-center"></i> Siswa Magang</span>
+                                <span class="flex items-center gap-3"><i class="fa-solid fa-user-graduate w-4 text-center"></i> Peserta Magang</span>
 
                             </button>
                         </li>
@@ -248,7 +248,7 @@
                         <li>
                             <button onclick="showMainContent('history'); closeSidebarMobile();" id="side-nav-history"
                                 class="sidebar-nav-link w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-clock-rotate-left w-4 text-center text-teal-600"></i> Riwayat Alumni</span>
+                                <span class="flex items-center gap-3"><i class="fa-solid fa-clock-rotate-left w-4 text-center text-teal-600"></i> History</span>
                                 <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">{{ count($historyStudents ?? []) }}</span>
                             </button>
                         </li>
@@ -387,7 +387,7 @@
                         'pendaftaranRescheduleModal' => ['tanggal_mulai_saran', 'tanggal_selesai_saran', 'catatan_revisi_jadwal'],
                     ];
                     $activePegawaiModal = session('modal_error_target');
-                    if (!$activePegawaiModal && $errors->any()) {
+                    if (!$activePegawaiModal && isset($errors) && $errors->any()) {
                         foreach ($pegawaiModalFieldMap as $mId => $fields) {
                             if ($errors->hasAny($fields)) {
                                 $activePegawaiModal = $mId;
@@ -1354,7 +1354,7 @@
             <!-- TAB 3: SISWA -->
             <button type="button" onclick="showMainContent('siswa')" id="pegawai-bottom-nav-siswa"
                 class="transition-all active:scale-90 text-gray-400 hover:text-gray-600 flex flex-col items-center justify-center gap-0.5"
-                title="Siswa Magang">
+                title="Peserta Magang">
                 <i class="fa-solid fa-user-graduate text-base"></i>
                 <span class="text-[9px] font-semibold">Siswa</span>
             </button>
@@ -1378,7 +1378,7 @@
             <!-- TAB 6: RIWAYAT ALUMNI -->
             <button type="button" onclick="showMainContent('history')" id="pegawai-bottom-nav-history"
                 class="transition-all active:scale-90 text-gray-400 hover:text-gray-600 flex flex-col items-center justify-center gap-0.5"
-                title="Riwayat Alumni">
+                title="History">
                 <i class="fa-solid fa-clock-rotate-left text-base"></i>
                 <span class="text-[9px] font-semibold">Riwayat</span>
             </button>
@@ -1525,6 +1525,54 @@
                     <button type="submit"
                         class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs shadow-xs transition">
                         Tolak Pengunduran Diri
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Memberhentikan Peserta Magang (Pegawai) -->
+    <div id="modalTerminatePendaftaranPegawai" class="modal hidden fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="card bg-white w-full max-w-md overflow-hidden flex flex-col shadow-2xl rounded-2xl animate-fade-in">
+            <div class="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between bg-[#fafafa]">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm border border-rose-200">
+                        <i class="fa-solid fa-user-slash"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-900">Memberhentikan Peserta Magang</h3>
+                        <p class="text-xs text-gray-400" id="terminatePendaftaranSub">Tindakan pembimbing / pegawai BPS</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modalTerminatePendaftaranPegawai')" class="w-7 h-7 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <form id="terminatePendaftaranFormPegawai" method="POST" action="" class="space-y-4 p-5">
+                @csrf
+                <div class="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 text-xs leading-relaxed space-y-1">
+                    <strong class="block text-rose-950 font-bold">Peringatan Tindakan:</strong>
+                    <p class="text-[11px] text-rose-800">
+                        Peserta akan langsung diakhiri masa magangnya hari ini dan status akun dikembalikan ke calon peserta. Alasan pemberhentian akan tercatat resmi pada riwayat peserta tanpa penerbitan sertifikat.
+                    </p>
+                </div>
+
+                <div class="space-y-1.5 text-xs">
+                    <label class="font-bold text-gray-700 block">Alasan Pemberhentian <span class="text-rose-500">*</span></label>
+                    <textarea name="alasan_pemberhentian" id="inputTerminateReasonPegawai" rows="3" required placeholder="Tuliskan catatan alasan pemberhentian peserta ini..."
+                        class="w-full text-xs p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-gray-900 leading-relaxed"></textarea>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
+                    <button type="button" onclick="closeModal('modalTerminatePendaftaranPegawai')"
+                        class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-50 transition">
+                        Batal
+                    </button>
+                    <button type="submit" onclick="return confirm('Apakah Anda yakin ingin MEMBERHENTIKAN peserta ini dari program magang? Alasan akan tercatat di riwayat.');"
+                        class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition flex items-center gap-1 shadow-xs">
+                        <i class="fa-solid fa-user-xmark text-xs"></i>
+                        <span>Ya, Berhentikan Peserta</span>
                     </button>
                 </div>
             </form>
@@ -2730,6 +2778,20 @@
                             Tutup
                         </button>
                     `;
+                } else if (item.status === 'approved') {
+                    footerEl.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="closeModal('pendaftaranDetailModal'); openTerminatePendaftaranModal(${item.id}, '${titleText.replace(/'/g, "\\'")}')"
+                                class="px-3.5 py-1.5 border border-rose-300 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition flex items-center gap-1 shadow-xs active:scale-95 cursor-pointer">
+                                <i class="fa-solid fa-user-xmark"></i>
+                                <span>Berhentikan Peserta</span>
+                            </button>
+                        </div>
+                        <button type="button" onclick="closeModal('pendaftaranDetailModal')"
+                            class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-50 transition">
+                            Tutup
+                        </button>
+                    `;
                 } else {
                     footerEl.innerHTML = `
                         <div></div>
@@ -2742,6 +2804,17 @@
             }
 
             showModal('pendaftaranDetailModal');
+        }
+
+        function openTerminatePendaftaranModal(id, titleText) {
+            const form = document.getElementById('terminatePendaftaranFormPegawai');
+            const sub = document.getElementById('terminatePendaftaranSub');
+            const input = document.getElementById('inputTerminateReasonPegawai');
+            if (form) form.action = `/pendaftaran/${id}/berhentikan`;
+            if (sub) sub.textContent = titleText || 'Tindakan pembimbing / pegawai BPS';
+            if (input) input.value = '';
+            showModal('modalTerminatePendaftaranPegawai');
+            input?.focus();
         }
 
         function confirmApproveResignation(id) {

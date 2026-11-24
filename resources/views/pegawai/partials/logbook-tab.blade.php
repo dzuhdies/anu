@@ -471,11 +471,17 @@
                                 <p class="text-xs text-gray-500 mt-0.5" id="detailStSub">-</p>
                             </div>
                         </div>
-                        <div class="text-left sm:text-right">
-                            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block">Status Berkas</span>
-                            <span class="inline-flex items-center gap-1 text-xs font-bold mt-0.5" id="detailStProgressBadge">
-                                -
-                            </span>
+                        <div class="text-left sm:text-right flex flex-col sm:items-end gap-1.5">
+                            <div>
+                                <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block">Status Berkas</span>
+                                <span class="inline-flex items-center gap-1 text-xs font-bold mt-0.5" id="detailStProgressBadge">
+                                    -
+                                </span>
+                            </div>
+                            <button type="button" onclick="openTerminateStudentModal()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-semibold transition active:scale-95 cursor-pointer" title="Memberhentikan peserta di tengah masa magang">
+                                <i class="fa-solid fa-user-xmark text-[10px]"></i>
+                                <span>Berhentikan Peserta</span>
+                            </button>
                         </div>
                     </div>
 
@@ -557,6 +563,42 @@
                     </form>
                 </div>
 
+                <!-- Bagian Kelulusan & Penerbitan Sertifikat Magang -->
+                <div class="card p-5 bg-white border border-gray-100 space-y-3.5" id="certificateActionCard">
+                    <div class="flex items-start justify-between gap-3 flex-wrap">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center text-sm font-bold shrink-0 border border-teal-200 mt-0.5">
+                                <i class="fa-solid fa-certificate"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">Penyelesaian Magang & Penerbitan Sertifikat</h4>
+                                <p class="text-[11px] text-gray-500 mt-0.5" id="certificateCardSubtitle">
+                                    Setelah seluruh berkas bulanan disetujui (ACC), pegawai dapat menerbitkan sertifikat resmi magang BPS untuk siswa ini.
+                                </p>
+                            </div>
+                        </div>
+                        <div id="certStatusBadgeWrapper"></div>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl border border-gray-200 bg-gray-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div class="space-y-0.5">
+                            <span class="text-[10px] text-gray-400 font-semibold uppercase block">Status Sertifikat</span>
+                            <strong class="text-gray-900 font-bold block" id="certStatusText">Belum Diterbitkan</strong>
+                            <span class="text-[11px] text-gray-500" id="certNumberInfo">Nomor sertifikat akan digenerate otomatis</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="#" id="btnViewCertLink" target="_blank" class="hidden px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs">
+                                <i class="fa-solid fa-print text-[11px]"></i>
+                                <span>Lihat / Cetak Sertifikat</span>
+                            </a>
+                            <button type="button" id="btnOpenModalCert" onclick="openIssueCertModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95">
+                                <i class="fa-solid fa-award text-[11px]"></i>
+                                <span>Terbitkan Sertifikat Magang</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             @else
                 <div class="card p-12 text-center text-gray-400">
                     <i class="fa-solid fa-folder-open text-4xl text-gray-300 mb-2"></i>
@@ -608,6 +650,142 @@
                     class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md active:scale-95">
                     <i class="fa-solid fa-paper-plane text-[11px]"></i>
                     <span>Kirim Catatan Perbaikan</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Terbitkan Sertifikat Magang Pegawai -->
+<div id="modalIssueCertPegawai" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-scaleUp border border-gray-100">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center text-sm font-bold border border-teal-200">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-900">Terbitkan Sertifikat Resmi Magang</h3>
+                    <p class="text-[11px] text-gray-400" id="issueCertSub">Verifikasi & Terbitkan Sertifikat BPS Kota Malang</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeIssueCertModal()" class="text-gray-400 hover:text-black text-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ route('pegawai.sertifikat.terbitkan') }}" id="formIssueCertPegawai" class="space-y-3.5 text-xs">
+            @csrf
+            <input type="hidden" name="student_id" id="certInputStudentId" value="">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="font-bold text-gray-700 block text-[11px]">Nama Peserta Magang</label>
+                    <input type="text" name="student_name" id="certInputStudentName" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900">
+                </div>
+                <div class="space-y-1">
+                    <label class="font-bold text-gray-700 block text-[11px]">Asal Kampus / Sekolah</label>
+                    <input type="text" name="institution" id="certInputInstitution" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="font-bold text-gray-700 block text-[11px]">Nomor Surat Sertifikat</label>
+                    <input type="text" name="certificate_number" id="certInputCertNumber" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900">
+                </div>
+                <div class="space-y-1">
+                    <label class="font-bold text-gray-700 block text-[11px]">Predikat Penilaian</label>
+                    <select name="predicate" id="certInputPredicate" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900">
+                        <option value="Sangat Baik">Sangat Baik (A)</option>
+                        <option value="Baik" selected>Baik (B)</option>
+                        <option value="Cukup">Cukup (C)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="font-bold text-gray-700 block text-[11px]">Tanggal Terbit</label>
+                    <input type="date" name="issue_date" id="certInputIssueDate" value="{{ date('Y-m-d') }}" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900">
+                </div>
+                <div class="space-y-1">
+                    <label class="font-bold text-gray-700 block text-[11px]">Jabatan Penandatangan</label>
+                    <input type="text" name="signer_position" id="certInputSignerPos" value="Kepala BPS Kota Malang" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900">
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="font-bold text-gray-700 block text-[11px]">Nama Penandatangan / Pembimbing</label>
+                <input type="text" name="signer_name" id="certInputSignerName" value="{{ Auth::user()->name ?: 'Kepala BPS Kota Malang' }}" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900">
+            </div>
+
+            <div class="space-y-1">
+                <label class="font-bold text-gray-700 block text-[11px]">Catatan / Keterangan Khusus (Opsional)</label>
+                <textarea name="notes" id="certInputNotes" rows="2" placeholder="Catatan tambahan di sertifikat jika ada..." class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900"></textarea>
+            </div>
+
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px] leading-relaxed flex items-start gap-2">
+                <i class="fa-solid fa-circle-info text-amber-600 mt-0.5"></i>
+                <span>Menerbitkan sertifikat ini akan menandai program magang siswa sebagai <strong>Selesai (Completed)</strong>. Siswa dapat mengunduh sertifikat resmi langsung dari akun mereka.</span>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button type="button" onclick="closeIssueCertModal()" class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs transition">
+                    Batal
+                </button>
+                <button type="submit" class="px-4 py-2 rounded-xl bg-gray-900 hover:bg-black text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs">
+                    <i class="fa-solid fa-check text-[11px]"></i>
+                    <span>Terbitkan Sekarang</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Memberhentikan Peserta Magang (Pegawai) -->
+<div id="modalTerminateStudentPegawai" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scaleUp border border-gray-100">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm font-bold border border-rose-200">
+                    <i class="fa-solid fa-user-slash"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-900">Memberhentikan Peserta Magang</h3>
+                    <p class="text-[11px] text-gray-400">Tindakan Khusus Pembimbing / Pegawai BPS</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeTerminateStudentModal()" class="text-gray-400 hover:text-black text-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="" id="formTerminateStudentPegawai" class="space-y-3.5 text-xs">
+            @csrf
+            <div class="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 text-[11px] leading-relaxed space-y-1">
+                <div class="font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
+                    <span id="terminateStudentNameText">Peserta Magang</span>
+                </div>
+                <p id="terminateStudentDivText" class="text-rose-800 text-[10px]">-</p>
+                <p class="text-[10px] text-rose-700 pt-1">
+                    Peserta akan langsung diakhiri masa magangnya dan status akun dikembalikan. Alasan pemberhentian akan tercatat resmi pada riwayat peserta tanpa penerbitan sertifikat.
+                </p>
+            </div>
+
+            <div class="space-y-1">
+                <label class="font-bold text-gray-700 block text-[11px]">Alasan Pemberhentian <span class="text-rose-500">*</span></label>
+                <textarea name="alasan_pemberhentian" id="terminateReasonInput" rows="3" required placeholder="Tuliskan alasan jelas pemberhentian peserta magang ini..." class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900 leading-relaxed"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                <button type="button" onclick="closeTerminateStudentModal()" class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs transition">
+                    Batal
+                </button>
+                <button type="submit" onclick="return confirm('Apakah Anda yakin ingin MEMBERHENTIKAN peserta ini dari program magang? Tindakan ini akan tercatat resmi di history.');" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs">
+                    <i class="fa-solid fa-user-xmark text-[11px]"></i>
+                    <span>Ya, Berhentikan Peserta</span>
                 </button>
             </div>
         </form>
@@ -1001,6 +1179,106 @@
                 statusText.className = 'text-[10px] text-gray-500 italic';
             }
         }
+
+        // Setup Certificate Action Card
+        const certBadgeWrapper = document.getElementById('certStatusBadgeWrapper');
+        const certStatusText = document.getElementById('certStatusText');
+        const certNumberInfo = document.getElementById('certNumberInfo');
+        const btnViewCert = document.getElementById('btnViewCertLink');
+        const btnOpenModalCert = document.getElementById('btnOpenModalCert');
+
+        if (student.has_certificate) {
+            if (certBadgeWrapper) certBadgeWrapper.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200"><i class="fa-solid fa-circle-check mr-1"></i>Sertifikat Terbit</span>`;
+            if (certStatusText) certStatusText.textContent = `Nomor: ${student.certificate_number}`;
+            if (certNumberInfo) certNumberInfo.textContent = 'Sertifikat resmi telah diterbitkan dan dapat diunduh oleh siswa.';
+            if (btnViewCert) {
+                btnViewCert.href = student.certificate_url;
+                btnViewCert.classList.remove('hidden');
+            }
+            if (btnOpenModalCert) {
+                btnOpenModalCert.innerHTML = '<i class="fa-solid fa-pen-to-square text-[11px]"></i><span>Perbarui Data Sertifikat</span>';
+                btnOpenModalCert.className = 'px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer';
+            }
+        } else {
+            if (certBadgeWrapper) {
+                certBadgeWrapper.innerHTML = student.is_complete
+                    ? `<span class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold border border-blue-200"><i class="fa-solid fa-circle-check mr-1"></i>Siap Diterbitkan</span>`
+                    : `<span class="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-bold border border-gray-200"><i class="fa-regular fa-clock mr-1"></i>Belum Lengkap</span>`;
+            }
+            if (certStatusText) {
+                certStatusText.textContent = student.is_complete ? 'Berkas Lengkap — Siap Terbit' : 'Menunggu Kelengkapan Berkas Bulanan';
+            }
+            if (certNumberInfo) {
+                certNumberInfo.textContent = student.is_complete
+                    ? `Usulan Nomor: ${student.default_cert_number}`
+                    : `Siswa baru mengumpulkan ${student.approved_count} dari ${student.total_months} bulan berkas disetujui.`;
+            }
+            if (btnViewCert) btnViewCert.classList.add('hidden');
+            if (btnOpenModalCert) {
+                if (student.is_complete) {
+                    btnOpenModalCert.disabled = false;
+                    btnOpenModalCert.innerHTML = '<i class="fa-solid fa-award text-[11px]"></i><span>Terbitkan Sertifikat Magang</span>';
+                    btnOpenModalCert.className = 'px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer';
+                    btnOpenModalCert.title = 'Terbitkan sertifikat resmi kelulusan';
+                } else {
+                    btnOpenModalCert.disabled = true;
+                    btnOpenModalCert.innerHTML = '<i class="fa-solid fa-lock text-[11px]"></i><span>Sertifikat Terkunci (Berkas Belum Lengkap)</span>';
+                    btnOpenModalCert.className = 'px-4 py-2 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 text-xs font-semibold cursor-not-allowed flex items-center gap-1.5 shadow-none';
+                    btnOpenModalCert.title = `Siswa belum melengkapi berkas bulanan (${student.approved_count}/${student.total_months} bulan disetujui). Sertifikat tidak dapat diberikan.`;
+                }
+            }
+        }
+    }
+
+    function openIssueCertModal() {
+        const student = progressStudentsData.find(s => s.id === selectedProgresStudentId);
+        if (!student) return;
+
+        if (!student.is_complete && !student.has_certificate) {
+            alert(`Sertifikat belum dapat diberikan karena peserta belum melengkapi berkas logbook bulanan (${student.approved_count} dari ${student.total_months} bulan disetujui).`);
+            return;
+        }
+
+        const inputId = document.getElementById('certInputStudentId');
+        const inputName = document.getElementById('certInputStudentName');
+        const inputInst = document.getElementById('certInputInstitution');
+        const inputNumber = document.getElementById('certInputCertNumber');
+        const sub = document.getElementById('issueCertSub');
+
+        if (inputId) inputId.value = student.id;
+        if (inputName) inputName.value = student.name;
+        if (inputInst) inputInst.value = student.institution;
+        if (inputNumber) inputNumber.value = student.certificate_number || student.default_cert_number;
+        if (sub) sub.textContent = `${student.name} · ${student.division}`;
+
+        document.getElementById('modalIssueCertPegawai')?.classList.remove('hidden');
+    }
+
+    function closeIssueCertModal() {
+        document.getElementById('modalIssueCertPegawai')?.classList.add('hidden');
+    }
+
+    function openTerminateStudentModal() {
+        const student = progressStudentsData.find(s => s.id === selectedProgresStudentId);
+        if (!student) return;
+
+        const modal = document.getElementById('modalTerminateStudentPegawai');
+        const form = document.getElementById('formTerminateStudentPegawai');
+        const nameEl = document.getElementById('terminateStudentNameText');
+        const divEl = document.getElementById('terminateStudentDivText');
+        const inputReason = document.getElementById('terminateReasonInput');
+
+        if (form) form.action = `/pegawai/siswa/${student.id}/berhentikan`;
+        if (nameEl) nameEl.textContent = student.name;
+        if (divEl) divEl.textContent = `${student.institution} · Divisi ${student.division}`;
+        if (inputReason) inputReason.value = '';
+
+        modal?.classList.remove('hidden');
+        inputReason?.focus();
+    }
+
+    function closeTerminateStudentModal() {
+        document.getElementById('modalTerminateStudentPegawai')?.classList.add('hidden');
     }
 
     function filterProgresStudentList() {

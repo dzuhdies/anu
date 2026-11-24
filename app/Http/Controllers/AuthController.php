@@ -175,6 +175,11 @@ class AuthController extends Controller
     protected function redirectBasedOnRole(string $role)
     {
         if ($role === 'siswa') {
+            $activeApp = Auth::user()->activeApplication();
+            if ($activeApp && $activeApp->status === 'resignation_requested') {
+                return redirect()->route('pendaftaran.index', ['tab' => 'status']);
+            }
+
             $profile = Auth::user()->siswaProfile;
             $start = $profile ? ($profile->start_date ?? $profile->tanggal_mulai) : null;
             $end = $profile ? ($profile->end_date ?? $profile->tanggal_selesai) : null;

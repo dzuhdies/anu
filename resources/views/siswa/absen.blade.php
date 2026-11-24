@@ -582,7 +582,25 @@
                 </div>
             </div>
 
-            <div class="pt-1">
+            <div class="pt-1 space-y-2">
+                @if(isset($application) && $application && $application->status === 'approved')
+                    <button type="button" onclick="closeProfileModal(); openModalUndurDiriAbsen();" class="w-full py-2.5 px-3 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 hover:border-rose-300 border border-rose-200 text-xs font-semibold transition flex items-center justify-between cursor-pointer active:scale-95">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-user-xmark text-rose-600"></i>
+                            <span>Pengunduran Diri Magang</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-right text-[10px] text-rose-400"></i>
+                    </button>
+                @else
+                    <a href="{{ route('pendaftaran.index', ['tab' => 'status']) }}" class="w-full py-2.5 px-3 rounded-xl bg-gray-50 text-gray-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-gray-200 text-xs font-semibold transition flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-user-xmark text-rose-500"></i>
+                            <span>Pengunduran Diri Magang</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-right text-[10px] text-gray-400"></i>
+                    </a>
+                @endif
+
                 <form method="POST" action="{{ route('logout') }}" onsubmit="showLoading('Keluar Akun...', 'Sedang memproses logout...', 'generic')">
                     @csrf
                     <button type="submit" class="w-full py-2.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 text-xs font-bold transition flex items-center justify-center gap-2">
@@ -2287,7 +2305,66 @@
                 });
             }
         });
+
+        function openModalUndurDiriAbsen() {
+            document.getElementById('modalUndurDiriAbsen')?.classList.remove('hidden');
+        }
+
+        function closeModalUndurDiriAbsen() {
+            document.getElementById('modalUndurDiriAbsen')?.classList.add('hidden');
+        }
     </script>
+
+    <!-- Modal Pengunduran Diri Peserta Magang (Absen) -->
+    <div id="modalUndurDiriAbsen" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scaleUp border border-gray-100">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm font-bold border border-rose-200">
+                        <i class="fa-solid fa-user-xmark"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-900">Pengajuan Pengunduran Diri</h3>
+                        <p class="text-[11px] text-gray-400">Program Magang BPS Kota Malang</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModalUndurDiriAbsen()" class="text-gray-400 hover:text-black text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            @if(isset($application) && $application)
+                <form method="POST" action="{{ route('pendaftaran.undur_diri', $application->id) }}" enctype="multipart/form-data" class="space-y-3.5 text-xs">
+                    @csrf
+                    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px] leading-relaxed flex items-start gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5 shrink-0"></i>
+                        <span><strong>Peringatan:</strong> Pengunduran diri yang diajukan akan diverifikasi dan disetujui oleh pihak BPS. Peserta yang mengundurkan diri <strong>tidak memperoleh sertifikat magang</strong> dan status pengunduran diri akan dicatat di riwayat.</span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="font-bold text-gray-700 block text-[11px]">Alasan Pengunduran Diri <span class="text-rose-500">*</span></label>
+                        <textarea name="alasan_undur_diri" rows="3" required placeholder="Jelaskan secara jujur alasan pengunduran diri Anda..." class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-gray-900 leading-relaxed"></textarea>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="font-bold text-gray-700 block text-[11px]">Berkas Bukti / Surat Resmi Permohonan <span class="text-rose-500">*</span></label>
+                        <input type="file" name="bukti_undur_diri" accept=".pdf,.jpg,.jpeg,.png" required class="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:bg-white focus:outline-none focus:border-gray-900 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-black">
+                        <span class="text-[10px] text-gray-400 block">Format: PDF, JPG, PNG (Maksimal 5MB)</span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                        <button type="button" onclick="closeModalUndurDiriAbsen()" class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs transition">
+                            Batal
+                        </button>
+                        <button type="submit" onclick="return confirm('Apakah Anda yakin ingin mengajukan pengunduran diri dari program magang? Keputusan ini tidak dapat dibatalkan.');" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs">
+                            <i class="fa-solid fa-paper-plane text-[11px]"></i>
+                            <span>Kirim Pengajuan Undur Diri</span>
+                        </button>
+                    </div>
+                </form>
+            @endif
+        </div>
+    </div>
 </body>
 
 </html>

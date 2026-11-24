@@ -90,6 +90,16 @@ class User extends Authenticatable
         return $this->participantProfile();
     }
 
+    public function certificates(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+    public function certificate(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Certificate::class)->latestOfMany();
+    }
+
     public function getAuthIdentifierName()
     {
         return 'username';

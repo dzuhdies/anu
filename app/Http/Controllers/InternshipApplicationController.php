@@ -84,13 +84,13 @@ class InternshipApplicationController extends Controller
                   ->orWhereHas('members', fn($sub) => $sub->where('user_id', $user->id));
             })
             ->where(function ($q) use ($today) {
-                $q->where('status', 'completed')
+                $q->whereIn('status', ['completed', 'resigned', 'terminated'])
                   ->orWhere(function ($sub) use ($today) {
                       $sub->where('status', 'approved')
                           ->whereDate('end_date', '<', $today);
                   });
             })
-            ->with(['division', 'members.user.participantProfile', 'leader'])
+            ->with(['division', 'members.user.participantProfile', 'leader', 'certificate'])
             ->latest('end_date')
             ->get();
 
@@ -137,7 +137,7 @@ class InternshipApplicationController extends Controller
             }
         }
 
-        if ($magangSudahMulai && $user->role === 'siswa') {
+        if ($magangSudahMulai && $user->role === 'siswa' && !$request->has('tab') && (!$application || $application->status !== 'resignation_requested')) {
             return redirect()->route('siswa.absen.form');
         }
 
@@ -648,26 +648,15 @@ class InternshipApplicationController extends Controller
     {
         $user = Auth::user();
         $application = InternshipApplication::where('id', $id)
-            ->where('leader_user_id', $user->id)
+            ->where(function ($q) use ($user) {
+                $q->where('leader_user_id', $user->id)
+                  ->orWhereHas('members', fn ($m) => $m->where('user_id', $user->id));
+            })
             ->firstOrFail();
 
         if ($application->status !== 'approved') {
             LogHelper::fail($request, 'Pengajuan Pengunduran Diri Ditolak', "User {$user->username} mencoba mengajukan pengunduran diri pada ID #{$id} yang statusnya {$application->status} (bukan approved).");
             return back()->with('error', 'Pengunduran diri hanya dapat diajukan untuk permohonan magang yang telah disetujui.');
-        }
-
-        $rawStartDate = $application->start_date;
-        $startDate = Carbon::parse($rawStartDate)->startOfDay();
-        $today = Carbon::today();
-        $limitDate = $startDate->copy()->subDays(2);
-
-        if ($today->gt($limitDate)) {
-            $msg = 'Batas pengajuan pengunduran diri telah berakhir. Pengunduran diri hanya dapat diajukan paling lambat H-2 sebelum tanggal mulai pelaksanaan magang (' . $startDate->format('d/m/Y') . ').';
-            LogHelper::fail($request, 'Pengajuan Pengunduran Diri Terlambat', "User {$user->username} mencoba mengajukan pengunduran diri ID #{$id} melebihi batas H-2 (Mulai: {$startDate->format('d/m/Y')}).");
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => $msg], 422);
-            }
-            return back()->with('error', $msg)->with('modal_error_target', 'undurDiriModal');
         }
 
         $reason = $request->resignation_reason ?? $request->alasan_undur_diri;
@@ -697,11 +686,22 @@ class InternshipApplicationController extends Controller
 
         $proofPath = $request->file($proofFileKey)->store('undur_diri', 'public');
 
+        $history = $application->resignation_history ?? [];
+        $history[] = [
+            'action' => 'requested',
+            'status_label' => 'Mengajukan Pengunduran Diri',
+            'actor' => $user->username,
+            'reason' => $reason,
+            'proof' => $proofPath,
+            'created_at' => now()->translatedFormat('d F Y, H:i'),
+        ];
+
         $application->update([
             'status' => 'resignation_requested',
             'resignation_reason' => $reason,
             'resignation_proof' => $proofPath,
             'resignation_requested_at' => now(),
+            'resignation_history' => $history,
         ]);
 
         LogHelper::success($request, 'Pengajuan Pengunduran Diri Berhasil', "User {$user->username} mengajukan pengunduran diri magang pada ID #{$id}. Menunggu persetujuan Admin/Pegawai.");
@@ -747,6 +747,15 @@ class InternshipApplicationController extends Controller
             Storage::disk('public')->delete($proofFile);
         }
 
+        $history = $application->resignation_history ?? [];
+        $history[] = [
+            'action' => 'cancelled',
+            'status_label' => 'Pengunduran Diri Dibatalkan Peserta',
+            'actor' => $user->username,
+            'reason' => $application->resignation_reason,
+            'created_at' => now()->translatedFormat('d F Y, H:i'),
+        ];
+
         $application->update([
             'status' => 'approved',
             'resignation_reason' => null,
@@ -755,6 +764,7 @@ class InternshipApplicationController extends Controller
             'resignation_admin_note' => null,
             'resignation_approved_by' => null,
             'resignation_approved_at' => null,
+            'resignation_history' => $history,
         ]);
 
         LogHelper::success($request, 'Batalkan Pengunduran Diri Berhasil', "User {$user->username} membatalkan pengajuan pengunduran diri pada pendaftaran ID #{$id}. Status dikembalikan menjadi disetujui (approved).");

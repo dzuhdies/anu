@@ -66,6 +66,22 @@ class StudentController extends Controller
         $startDate = $studentProfile->start_date;
         $endDate = $studentProfile->end_date;
 
+        $application = $user->activeApplication()
+            ?: $user->ledApplications()->latest()->first()
+            ?: $user->memberApplications()->latest()->first();
+
+        // Jika siswa sedang mengajukan pengunduran diri, arahkan ke tab status pendaftaran
+        if ($application && $application->status === 'resignation_requested') {
+            return redirect()->route('pendaftaran.index', ['tab' => 'status'])
+                ->with('info', 'Permohonan pengunduran diri Anda sedang menunggu verifikasi pihak BPS.');
+        }
+
+        // Jika status pengunduran diri atau pemberhentian telah diproses, kembalikan ke riwayat
+        if ($application && in_array($application->status, ['resigned', 'terminated'])) {
+            $user->update(['role' => 'calon_peserta']);
+            return redirect()->route('pendaftaran.index', ['tab' => 'history']);
+        }
+
         // Cek periode magang
         if (
             $startDate &&
@@ -89,15 +105,13 @@ class StudentController extends Controller
             $endDate &&
             Carbon::today()->gt(Carbon::parse($endDate)->endOfDay())
         ) {
-            $tglSelesai = Carbon::parse($endDate)->translatedFormat("d F Y");
-            $user->update(["role" => "calon_peserta"]);
+            $hasCertificate = \App\Models\Certificate::where('user_id', $user->id)->exists();
+            if ($hasCertificate) {
+                $user->update(["role" => "calon_peserta"]);
+                return redirect()->route("pendaftaran.index", ["tab" => "history"]);
+            }
 
-            return redirect()
-                ->route("pendaftaran.index", ["tab" => "history"])
-                ->with(
-                    "info",
-                    "Masa kegiatan magang Anda telah resmi selesai pada tanggal {$tglSelesai}. Terima kasih atas dedikasi dan kontribusi Anda selama magang di BPS Kota Malang! Riwayat magang Anda tersimpan pada menu History.",
-                );
+            return redirect()->route("siswa.penyelesaian");
         }
 
         $today = now()->toDateString();
@@ -167,10 +181,48 @@ class StudentController extends Controller
                     "initialTab" => $initialTab,
                     "logbookReviewEnabled" => $logbookReviewEnabled,
                     "progressData" => $progressData,
+                    "application" => $application,
                 ],
                 $logbookData,
             ),
         );
+    }
+
+    public function penyelesaian(Request $request)
+    {
+        $user = Auth::user();
+        $studentProfile = $user->studentProfile;
+
+        if (!$studentProfile) {
+            return redirect()->route('pendaftaran.index');
+        }
+
+        // Jika sertifikat sudah terbit, kembalikan ke pendaftaran history
+        $hasCertificate = \App\Models\Certificate::where('user_id', $user->id)->exists();
+        if ($hasCertificate) {
+            $user->update(['role' => 'calon_peserta']);
+            return redirect()->route('pendaftaran.index', ['tab' => 'history']);
+        }
+
+        $application = $user->activeApplication()
+            ?: $user->ledApplications()->latest()->first()
+            ?: $user->memberApplications()->latest()->first();
+
+        if ($application && in_array($application->status, ['resigned', 'terminated'])) {
+            $user->update(['role' => 'calon_peserta']);
+            return redirect()->route('pendaftaran.index', ['tab' => 'history']);
+        }
+
+        $progressData = app(\App\Http\Controllers\StudentProgressController::class)->buildProgressListForStudent($studentProfile);
+        $logbooks = $studentProfile->logbooks()->orderByDesc('date')->get();
+
+        return view('siswa.penyelesaian', [
+            'nama' => $studentProfile->full_name,
+            'siswaProfile' => $studentProfile,
+            'progressData' => $progressData,
+            'logbooks' => $logbooks,
+            'application' => $application,
+        ]);
     }
 
     public function absenMasuk(Request $request)

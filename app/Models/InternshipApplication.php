@@ -54,6 +54,7 @@ class InternshipApplication extends Model
         'undur_diri_approved_by',
         'undur_diri_approved_at',
         'catatan_undur_diri_admin',
+        'resignation_history',
     ];
 
     protected $casts = [
@@ -66,6 +67,7 @@ class InternshipApplication extends Model
         'approved_at' => 'datetime',
         'resignation_requested_at' => 'datetime',
         'resignation_approved_at' => 'datetime',
+        'resignation_history' => 'array',
     ];
 
     protected $appends = [
@@ -151,6 +153,11 @@ class InternshipApplication extends Model
     public function undurDiriApprover(): BelongsTo
     {
         return $this->resignationApprover();
+    }
+
+    public function certificate(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Certificate::class, 'application_id');
     }
 
     // Accessors

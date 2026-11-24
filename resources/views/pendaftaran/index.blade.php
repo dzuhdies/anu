@@ -158,6 +158,18 @@
                 </div>
             </div>
 
+            @if(isset($pendaftaran) && $pendaftaran && $pendaftaran->status === 'approved')
+                <div class="px-3 pt-2">
+                    <button type="button" onclick="openModalUndurDiri()" class="w-full py-2 px-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-[11px] font-semibold transition flex items-center justify-between cursor-pointer active:scale-95">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-xmark text-rose-600 text-[10px]"></i>
+                            <span>Pengunduran Diri</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-right text-[9px] text-rose-400"></i>
+                    </button>
+                </div>
+            @endif
+
             <!-- Profile Footer -->
             <div class="p-3 border-t border-gray-100 flex items-center justify-between bg-white">
                 <button type="button" onclick="switchTab('profile')" class="flex items-center gap-2.5 text-left flex-1 min-w-0 pr-2 hover:opacity-80 transition">
@@ -322,9 +334,20 @@
                             </div>
                         </div>
 
-                    @elseif($pendaftaran && $pendaftaran->status === 'approved' && isset($magangBelumMulai) && $magangBelumMulai)
-                        <!-- Status Pendaftaran Disetujui Menunggu Mulai -->
+                    @elseif($pendaftaran && $pendaftaran->status === 'approved')
+                        <!-- Status Pendaftaran Disetujui -->
                         <div class="card p-6 bg-white space-y-4">
+                            @if($pendaftaran->resignation_admin_note)
+                                <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 space-y-1">
+                                    <div class="flex items-center gap-2 font-bold text-rose-800">
+                                        <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
+                                        <span>Permohonan Pengunduran Diri Ditolak oleh Pihak BPS</span>
+                                    </div>
+                                    <p class="text-[11px] text-rose-700 leading-relaxed">
+                                        <strong>Alasan Penolakan:</strong> "{{ $pendaftaran->resignation_admin_note }}"
+                                    </p>
+                                </div>
+                            @endif
                             <div class="flex items-start gap-3.5">
                                 <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 font-bold text-lg">
                                     <i class="fa-solid fa-circle-check"></i>
@@ -332,20 +355,26 @@
                                 <div>
                                     <h3 class="text-sm font-bold text-gray-900">Pengajuan Magang Anda Telah Disetujui!</h3>
                                     <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                                        Selamat! Permohonan Anda pada divisi <strong>{{ $pendaftaran->divisi->nama_divisi }}</strong> telah disetujui. Periode magang Anda dijadwalkan pada <strong>{{ $pendaftaran->tanggal_mulai->translatedFormat('d F Y') }}</strong> s.d. <strong>{{ $pendaftaran->tanggal_selesai->translatedFormat('d F Y') }}</strong> ({{ $hariMenujuMulai }} hari lagi).
+                                        Selamat! Permohonan Anda pada divisi <strong>{{ $pendaftaran->divisi->nama_divisi }}</strong> telah disetujui. Periode magang Anda dijadwalkan pada <strong>{{ $pendaftaran->tanggal_mulai ? $pendaftaran->tanggal_mulai->translatedFormat('d F Y') : '-' }}</strong> s.d. <strong>{{ $pendaftaran->tanggal_selesai ? $pendaftaran->tanggal_selesai->translatedFormat('d F Y') : '-' }}</strong>{{ isset($hariMenujuMulai) && $hariMenujuMulai > 0 ? " ({$hariMenujuMulai} hari lagi)" : "" }}.
                                     </p>
                                 </div>
                             </div>
                             <div class="pt-3 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
-                                <button type="button" onclick="switchTab('status')" class="px-4 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-black transition">
-                                    Buka Halaman Status & Jadwal Magang
-                                </button>
-                                @if(isset($hariMenujuMulai) && $hariMenujuMulai >= 2)
-                                    <button type="button" onclick="openModalUndurDiri()" class="px-3.5 py-2 rounded-lg border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 text-xs font-semibold transition flex items-center gap-1.5">
-                                        <i class="fa-solid fa-user-xmark text-xs"></i>
-                                        <span>Ajukan Pengunduran Diri</span>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <button type="button" onclick="switchTab('status')" class="px-4 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-black transition">
+                                        Buka Halaman Status & Jadwal Magang
                                     </button>
-                                @endif
+                                    @if(isset($magangSudahMulai) && $magangSudahMulai)
+                                        <a href="{{ route('siswa.absen.form') }}" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center gap-1.5">
+                                            <i class="fa-solid fa-fingerprint text-xs"></i>
+                                            <span>Buka Halaman Presensi</span>
+                                        </a>
+                                    @endif
+                                </div>
+                                <button type="button" onclick="openModalUndurDiri()" class="px-3.5 py-2 rounded-lg border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 text-xs font-semibold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-user-xmark text-xs"></i>
+                                    <span>Ajukan Pengunduran Diri</span>
+                                </button>
                             </div>
                         </div>
 
@@ -799,6 +828,21 @@
                                     </p>
                                 </div>
                             @elseif($pendaftaran->status === 'approved')
+                                @if($pendaftaran->resignation_admin_note)
+                                    <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-950 space-y-2 shadow-2xs">
+                                        <div class="flex items-center gap-2 font-bold text-rose-900 text-sm">
+                                            <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
+                                            <span>Pemberitahuan: Permohonan Pengunduran Diri Ditolak</span>
+                                        </div>
+                                        <p class="text-xs text-rose-800 leading-relaxed">
+                                            Permohonan pengunduran diri yang Anda ajukan sebelumnya <strong>tidak disetujui / ditolak</strong> oleh pembimbing/pihak BPS. Anda tetap berstatus aktif sebagai peserta magang sesuai jadwal.
+                                        </p>
+                                        <div class="p-3 bg-white/90 rounded-xl border border-rose-100 space-y-1">
+                                            <strong class="text-rose-900 text-[11px] block">Alasan Penolakan dari Pegawai / Pembimbing:</strong>
+                                            <p class="text-rose-800 italic">"{{ $pendaftaran->resignation_admin_note }}"</p>
+                                        </div>
+                                    </div>
+                                @endif
                                 @if(isset($magangBelumMulai) && $magangBelumMulai)
                                     <div class="p-5 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-950 space-y-3 shadow-2xs">
                                         <div class="flex items-start gap-3.5">
@@ -834,11 +878,10 @@
                                                     <span>Presensi Dibuka {{ $pendaftaran->tanggal_mulai->format('d/m/Y') }}</span>
                                                 </div>
 
-                                                @if(isset($hariMenujuMulai) && $hariMenujuMulai >= 2)
-                                                    <button type="button" onclick="openModalUndurDiri()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold transition shadow-2xs">
-                                                        <span>Ajukan Pengunduran Diri</span>
-                                                    </button>
-                                                @endif
+                                                <button type="button" onclick="openModalUndurDiri()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold transition shadow-2xs">
+                                                    <i class="fa-solid fa-user-xmark text-[10px]"></i>
+                                                    <span>Ajukan Pengunduran Diri</span>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -853,11 +896,15 @@
                                                 <p class="text-xs text-emerald-700">Akun Anda aktif untuk melakukan presensi magang harian di BPS.</p>
                                             </div>
                                         </div>
-                                        <div class="pt-1">
+                                        <div class="pt-1 flex items-center gap-2 flex-wrap">
                                             <a href="{{ route('siswa.absen.form') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition shadow-xs text-xs">
                                                 <i class="fa-solid fa-fingerprint"></i>
                                                 <span>Buka Halaman Presensi / Absensi</span>
                                             </a>
+                                            <button type="button" onclick="openModalUndurDiri()" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 text-xs font-semibold transition shadow-2xs">
+                                                <i class="fa-solid fa-user-xmark text-xs"></i>
+                                                <span>Ajukan Pengunduran Diri</span>
+                                            </button>
                                         </div>
                                     </div>
                                 @endif
@@ -1272,9 +1319,19 @@
                                             <div>
                                                 <div class="flex items-center gap-2 flex-wrap">
                                                     <h4 class="text-sm font-bold text-gray-900">{{ $hist->divisi?->nama_divisi ?? 'Divisi BPS' }}</h4>
-                                                    <span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                                                        <i class="fa-solid fa-circle-check text-[10px]"></i> Selesai Magang
-                                                    </span>
+                                                    @if($hist->status === 'terminated')
+                                                        <span class="text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                                            <i class="fa-solid fa-user-xmark text-[10px]"></i> Diberhentikan
+                                                        </span>
+                                                    @elseif($hist->status === 'resigned')
+                                                        <span class="text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                                            <i class="fa-solid fa-person-walking-dashed-line-arrow-right text-[10px]"></i> Mengundurkan Diri
+                                                        </span>
+                                                    @else
+                                                        <span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                                            <i class="fa-solid fa-circle-check text-[10px]"></i> Selesai Magang
+                                                        </span>
+                                                    @endif
                                                     <span class="text-[10px] font-bold text-black-700">
                                                         {{ $hist->tipe === 'kelompok' ? ($hist->nama_kelompok ?: 'Kelompok') : 'Mandiri' }}
                                                     </span>
@@ -1290,6 +1347,104 @@
                                             <strong class="text-xs text-gray-800 font-bold block">{{ $hist->durasi_hari }} Hari Kalender</strong>
                                         </div>
                                     </div>
+
+                                    @if($hist->status === 'terminated')
+                                        <!-- Notifikasi Pemberhentian oleh Pegawai/Admin -->
+                                        <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-1.5 text-xs text-rose-950">
+                                            <div class="flex items-center gap-2 font-bold text-rose-900">
+                                                <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
+                                                <span>Peserta Diberhentikan dari Program Magang</span>
+                                            </div>
+                                            <p class="text-[11px] text-rose-800 leading-relaxed">
+                                                Masa magang telah diakhiri secara resmi oleh pihak BPS. Peserta tidak memperoleh sertifikat kelulusan.
+                                            </p>
+                                            @if($hist->resignation_admin_note)
+                                                <div class="p-2.5 bg-white/80 rounded-xl border border-rose-100">
+                                                    <strong class="text-[11px] text-rose-900 block font-semibold">Alasan Pemberhentian:</strong>
+                                                    <p class="text-[11px] text-rose-800 italic">"{{ $hist->resignation_admin_note }}"</p>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    @if($hist->certificate && !in_array($hist->status, ['resigned', 'terminated']))
+                                        <!-- Sertifikat Resmi Kelulusan Magang -->
+                                        <div class="p-4 bg-gradient-to-r from-teal-50 via-emerald-50 to-teal-50 border border-teal-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
+                                            <div class="flex items-start gap-3">
+                                                <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
+                                                    <i class="fa-solid fa-award"></i>
+                                                </div>
+                                                <div class="space-y-0.5">
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <strong class="text-sm font-bold text-teal-950">Sertifikat Resmi Magang BPS Kota Malang</strong>
+                                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
+                                                            Predikat: {{ $hist->certificate->predicate }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-[11px] text-teal-800 font-mono">
+                                                        No: {{ $hist->certificate->certificate_number }}
+                                                    </p>
+                                                    <span class="text-[10px] text-teal-600 block">
+                                                        Diterbitkan pada {{ $hist->certificate->issue_date ? \Carbon\Carbon::parse($hist->certificate->issue_date)->translatedFormat('d F Y') : '-' }} oleh {{ $hist->certificate->signer_name }} ({{ $hist->certificate->signer_position }})
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <a href="{{ route('sertifikat.show', $hist->certificate->id) }}" target="_blank"
+                                                class="px-4 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs shrink-0 self-start sm:self-auto active:scale-95">
+                                                <i class="fa-solid fa-print text-xs"></i>
+                                                <span>Buka & Cetak Sertifikat</span>
+                                            </a>
+                                        </div>
+                                    @endif
+
+                                    @if(!empty($hist->resignation_history) || $hist->alasan_undur_diri)
+                                        <!-- Catatan Riwayat Pengunduran Diri -->
+                                        <div class="p-4 bg-gray-50/80 border border-gray-200 rounded-2xl space-y-2 text-xs">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-2 font-bold text-gray-800">
+                                                    <i class="fa-solid fa-user-xmark text-gray-500"></i>
+                                                    <span>Catatan Riwayat Pengunduran Diri</span>
+                                                </div>
+                                            </div>
+                                            <div class="space-y-2">
+                                                @if(!empty($hist->resignation_history))
+                                                    @foreach($hist->resignation_history as $rEvent)
+                                                        <div class="p-3 bg-white rounded-xl border border-gray-100 space-y-1">
+                                                            <div class="flex items-center justify-between flex-wrap gap-1">
+                                                                <strong class="text-xs text-gray-900">{{ $rEvent['status_label'] ?? ucfirst($rEvent['action'] ?? 'Catatan') }}</strong>
+                                                                <span class="text-[10px] text-gray-400">{{ $rEvent['created_at'] ?? '-' }}</span>
+                                                            </div>
+                                                            @if(!empty($rEvent['reason']))
+                                                                <p class="text-[11px] text-gray-600"><strong>Alasan Pengajuan:</strong> "{{ $rEvent['reason'] }}"</p>
+                                                            @endif
+                                                            @if(!empty($rEvent['note']))
+                                                                <div class="p-2 bg-rose-50/80 rounded-lg border border-rose-100 text-[11px] text-rose-900">
+                                                                    <strong>Balasan Pegawai / Admin:</strong> "{{ $rEvent['note'] }}"
+                                                                </div>
+                                                            @endif
+                                                            @if(!empty($rEvent['proof']))
+                                                                <div class="pt-0.5">
+                                                                    <a href="{{ $rEvent['proof'] }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline">
+                                                                        <i class="fa-solid fa-paperclip"></i>
+                                                                        <span>Lihat Berkas Bukti</span>
+                                                                    </a>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                @else
+                                                    <div class="p-3 bg-white rounded-xl border border-gray-100 space-y-1">
+                                                        <p class="text-[11px] text-gray-700"><strong>Alasan:</strong> {{ $hist->alasan_undur_diri }}</p>
+                                                        @if($hist->resignation_admin_note || $hist->catatan_undur_diri_admin)
+                                                            <div class="p-2 bg-rose-50/80 rounded-lg border border-rose-100 text-[11px] text-rose-900">
+                                                                <strong>Balasan Pegawai:</strong> {{ $hist->resignation_admin_note ?: $hist->catatan_undur_diri_admin }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
 
                                     <!-- Grid Rincian -->
                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
@@ -2358,7 +2513,7 @@
         });
     </script>
 
-    @if($pendaftaran && $pendaftaran->status === 'approved' && isset($magangBelumMulai) && $magangBelumMulai && isset($hariMenujuMulai) && $hariMenujuMulai >= 2)
+    @if($pendaftaran && $pendaftaran->status === 'approved')
     <!-- Modal Pengunduran Diri oleh Peserta -->
     <div id="undurDiriModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
         <div class="card p-6 shadow-xl w-full max-w-lg bg-white max-h-[90vh] overflow-y-auto">
@@ -2397,7 +2552,7 @@
                         <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
                         Ketentuan Pengunduran Diri:
                     </strong>
-                    Pengunduran diri hanya dapat diajukan maksimal <strong>H-2 sebelum tanggal mulai magang</strong>. Permohonan Anda wajib menyertakan alasan yang jelas dan bukti pendukung, serta memerlukan persetujuan (ACC) dari pihak pegawai / admin BPS sebelum kuota dilepaskan.
+                    Permohonan pengunduran diri wajib menyertakan alasan yang jelas dan bukti pendukung resmi (surat pengunduran diri / keterangan). Pengajuan memerlukan verifikasi dan persetujuan (ACC) dari pihak pegawai / admin BPS sebelum kuota dan status akun dilepaskan.
                 </div>
 
                 <div>
