@@ -72,7 +72,7 @@
                 @endif
             </div>
 
-            <form action="{{ route('pegawai.absensi') }}?tab=logbook" method="GET" class="space-y-3.5 text-xs">
+            <form id="logbookFilterForm" action="{{ route('pegawai.absensi') }}?tab=logbook" method="GET" class="space-y-3.5 text-xs">
                 <input type="hidden" name="tab" value="logbook">
 
                 <div>
@@ -386,161 +386,186 @@
 </div>
 </div> <!-- Close pegawai-logbook-harian-wrapper -->
 
-<!-- ================= TAB 2: BERKAS PROGRES BULANAN ================= -->
+<!-- ================= TAB 2: BERKAS PROGRES BULANAN (SPLIT SIDEBAR + DETAIL) ================= -->
 <div id="pegawai-progres-bulanan-wrapper" class="hidden space-y-5">
-    <div class="card overflow-hidden">
-        <div class="p-4 sm:p-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-[#fafafa]">
-            <div>
-                <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    <i class="fa-solid fa-file-circle-check text-teal-600"></i>
-                    <span>Verifikasi Berkas Logbook Bulanan (TTD Ketua Divisi)</span>
-                </h3>
-                <p class="text-[11px] text-gray-400 mt-0.5">
-                    Periksa dan lakukan persetujuan (ACC) atau minta perbaikan berkas logbook bulanan yang diunggah peserta magang.
-                </p>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-                    {{ isset($monthlyProgresses) ? $monthlyProgresses->total() : 0 }} berkas tercatat
-                </span>
-            </div>
-        </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left text-gray-600 responsive-table">
-                <thead class="text-[11px] text-gray-400 uppercase bg-[#fafafa] font-semibold border-b border-gray-100">
-                    <tr>
-                        <th scope="col" class="px-6 py-3.5">Peserta Magang</th>
-                        <th scope="col" class="px-6 py-3.5">Periode Bulan</th>
-                        <th scope="col" class="px-6 py-3.5">Berkas TTD</th>
-                        <th scope="col" class="px-6 py-3.5 text-center">Status</th>
-                        <th scope="col" class="px-6 py-3.5">Catatan / Feedback</th>
-                        <th scope="col" class="px-6 py-3.5 text-right">Aksi Verifikasi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @if(isset($monthlyProgresses) && count($monthlyProgresses) > 0)
-                        @foreach ($monthlyProgresses as $item)
-                            @php
-                                $namaSiswa = $item->student->full_name ?? 'Peserta Magang';
-                                $monthName = \Carbon\Carbon::createFromDate($item->year, $item->month, 1)->locale('id')->isoFormat('MMMM Y');
-                            @endphp
-                            <tr class="hover:bg-gray-50/70 transition-colors align-top">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-lg bg-teal-50 text-teal-700 border border-teal-100 font-bold flex items-center justify-center text-xs shrink-0">
-                                            {{ strtoupper(substr($namaSiswa, 0, 1)) }}
-                                        </div>
-                                        <div class="min-w-0">
-                                            <div class="font-bold text-gray-900 text-sm">{{ $namaSiswa }}</div>
-                                            <div class="text-[11px] text-gray-500">
-                                                {{ $item->student->institution ?: '-' }}
-                                                @if ($item->student->division)
-                                                    · {{ $item->student->division->name }}
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="font-bold text-gray-900 text-xs">{{ $monthName }}</div>
-                                    <span class="text-[10px] text-gray-400">Tahun {{ $item->year }}</span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="space-y-1">
-                                        <div class="flex items-center gap-2">
-                                            <i class="fa-solid fa-file-pdf text-rose-500 text-sm"></i>
-                                            <span class="font-medium text-gray-800 text-xs truncate max-w-[150px]">{{ $item->file_name }}</span>
-                                        </div>
-                                        <div class="text-[10px] text-gray-400">
-                                            {{ $item->file_size_formatted }} · {{ $item->updated_at->locale('id')->isoFormat('D MMM Y, HH:mm') }}
-                                        </div>
-                                        <a href="{{ route('siswa.progres.download', $item->id) }}" target="_blank"
-                                            class="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline mt-0.5">
-                                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                                            <span>Buka Berkas</span>
-                                        </a>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-center whitespace-nowrap">
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border {{ $item->status_badge }}">
-                                        @if($item->status === 'approved')
-                                            <i class="fa-solid fa-circle-check text-emerald-500"></i> Disetujui (ACC)
-                                        @elseif($item->status === 'rejected')
-                                            <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> Perlu Perbaikan
-                                        @else
-                                            <i class="fa-solid fa-clock text-amber-500"></i> Menunggu
-                                        @endif
-                                    </span>
-                                    @if($item->reviewed_at)
-                                        <span class="block text-[9px] text-gray-400 mt-0.5">{{ $item->reviewed_at->format('d/m/Y H:i') }}</span>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- ================= SIDEBAR KIRI: DAFTAR ANAK MAGANG AKTIF ================= -->
+        <div class="lg:col-span-4 space-y-4">
+            <div class="card p-4 sm:p-5 bg-white border border-gray-100 space-y-3.5">
+                <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-users text-teal-600"></i>
+                            <span>Peserta Magang Aktif</span>
+                        </h3>
+                        <p class="text-[10px] text-gray-400 mt-0.5">Pilih siswa untuk verifikasi berkas bulanan</p>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200" id="progresStudentCountBadge">
+                        {{ count($progressStudentsPayload ?? []) }} Siswa
+                    </span>
+                </div>
+
+                <!-- Input Pencarian Siswa -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <input type="text" id="searchProgresStudentInput" oninput="filterProgresStudentList()"
+                        placeholder="Cari nama atau instansi..."
+                        class="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:border-gray-900 bg-gray-50/50 focus:bg-white text-gray-800 transition">
+                </div>
+
+                <!-- List Siswa Magang Aktif -->
+                <div class="space-y-2 max-h-[550px] overflow-y-auto custom-scrollbar pr-1" id="progresStudentsListContainer">
+                    @forelse($progressStudentsPayload ?? [] as $idx => $st)
+                        <button type="button" onclick="selectProgresStudent({{ $st['id'] }})"
+                            id="progres-student-btn-{{ $st['id'] }}"
+                            class="progres-student-item w-full p-3 rounded-xl border text-left transition flex items-start gap-3 cursor-pointer {{ $idx === 0 ? 'border-teal-600 bg-teal-50/40 shadow-xs' : 'border-gray-100 hover:border-gray-300 bg-white' }}"
+                            data-name="{{ strtolower($st['name']) }}"
+                            data-inst="{{ strtolower($st['institution']) }}">
+                            <div class="w-8 h-8 rounded-lg {{ $st['is_complete'] ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-700' }} font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                                {{ strtoupper(substr($st['name'], 0, 1)) }}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center justify-between gap-1">
+                                    <strong class="text-xs font-bold text-gray-900 truncate block">{{ $st['name'] }}</strong>
+                                    @if($st['is_complete'])
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 shrink-0">
+                                            Lengkap
+                                        </span>
+                                    @else
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">
+                                            {{ $st['uploaded_count'] }}/{{ $st['total_months'] }} Bln
+                                        </span>
                                     @endif
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="space-y-1 text-xs max-w-xs">
-                                        @if($item->notes)
-                                            <p class="text-gray-600 italic text-[11px]">Siswa: "{{ $item->notes }}"</p>
-                                        @endif
-                                        @if($item->feedback)
-                                            <div class="p-2 bg-rose-50 rounded text-rose-800 border border-rose-100 text-[11px]">
-                                                <strong>Catatan Revisi:</strong> {{ $item->feedback }}
-                                            </div>
-                                        @endif
-                                        @if(!$item->notes && !$item->feedback)
-                                            <span class="text-gray-400 text-[11px]">-</span>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-right whitespace-nowrap">
-                                    <div class="flex items-center justify-end gap-1.5">
-                                        {{-- Tombol Ekspor/Lihat Draft Logbook Siswa Bulan Itu --}}
-                                        <a href="{{ route('pegawai.siswa.logbook.export', $item->student_id) }}?bulan={{ $item->month }}&tahun={{ $item->year }}" target="_blank"
-                                            class="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-semibold transition"
-                                            title="Lihat Format Cetak Logbook Siswa Bulan Ini">
-                                            <i class="fa-solid fa-print text-gray-500"></i>
-                                        </a>
-
-                                        {{-- Tombol ACC --}}
-                                        <form method="POST" action="{{ route('pegawai.progres.approve', $item->id) }}" class="inline-block m-0"
-                                            onsubmit="return confirm('Apakah Anda yakin ingin MENYETUJUI (ACC) berkas bulan {{ $monthName }} milik {{ addslashes($namaSiswa) }}?');">
-                                            @csrf
-                                            <button type="submit"
-                                                class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs active:scale-95"
-                                                title="Setujui (ACC) Berkas">
-                                                <i class="fa-solid fa-check text-[11px]"></i>
-                                                <span>ACC</span>
-                                            </button>
-                                        </form>
-
-                                        {{-- Tombol Minta Perbaikan --}}
-                                        <button type="button"
-                                            onclick="openRejectProgresModal({{ $item->id }}, '{{ addslashes($namaSiswa) }}', '{{ addslashes($monthName) }}')"
-                                            class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center gap-1 active:scale-95"
-                                            title="Minta Perbaikan / Revisi Berkas">
-                                            <i class="fa-solid fa-pen text-[10px]"></i>
-                                            <span>Perbaiki</span>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    @else
-                        <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-gray-400">
-                                <i class="fa-solid fa-inbox text-3xl text-gray-300 mb-2 block"></i>
-                                <span class="font-medium">Belum ada berkas progres bulanan yang diunggah oleh siswa.</span>
-                            </td>
-                        </tr>
-                    @endif
-                </tbody>
-            </table>
+                                </div>
+                                <span class="text-[10px] text-gray-500 truncate block mt-0.5">{{ $st['institution'] }}</span>
+                                <div class="text-[9px] text-gray-400 mt-1 flex items-center justify-between">
+                                    <span>{{ $st['division'] }}</span>
+                                    <span>{{ $st['start_date'] }} - {{ $st['end_date'] }}</span>
+                                </div>
+                            </div>
+                        </button>
+                    @empty
+                        <div class="p-6 text-center text-gray-400 text-xs">
+                            <i class="fa-solid fa-user-xmark text-2xl mb-1 text-gray-300"></i>
+                            <p>Tidak ada peserta magang aktif saat ini.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
         </div>
 
-        @if(isset($monthlyProgresses) && $monthlyProgresses->hasPages())
-            <div class="p-4 border-t border-gray-100 bg-[#fafafa]">
-                {{ $monthlyProgresses->links() }}
-            </div>
-        @endif
+        <!-- ================= PANEL KANAN: DETAIL BERKAS PROGRES BULANAN ================= -->
+        <div class="lg:col-span-8 space-y-5" id="progresStudentDetailWrapper">
+            @if(count($progressStudentsPayload ?? []) > 0)
+                <!-- Siswa Info Banner -->
+                <div class="card p-5 bg-white border border-gray-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-teal-600 text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0" id="detailStAvatar">
+                                -
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-900" id="detailStName">-</h3>
+                                <p class="text-xs text-gray-500 mt-0.5" id="detailStSub">-</p>
+                            </div>
+                        </div>
+                        <div class="text-left sm:text-right">
+                            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block">Status Berkas</span>
+                            <span class="inline-flex items-center gap-1 text-xs font-bold mt-0.5" id="detailStProgressBadge">
+                                -
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 text-xs">
+                        <div class="p-2.5 bg-gray-50 rounded-lg">
+                            <span class="text-[10px] text-gray-400 block font-semibold">Divisi Penugasan</span>
+                            <strong class="text-gray-900 text-xs truncate block" id="detailStDivision">-</strong>
+                        </div>
+                        <div class="p-2.5 bg-gray-50 rounded-lg">
+                            <span class="text-[10px] text-gray-400 block font-semibold">Periode Magang</span>
+                            <strong class="text-gray-900 text-xs block" id="detailStPeriod">-</strong>
+                        </div>
+                        <div class="p-2.5 bg-gray-50 rounded-lg">
+                            <span class="text-[10px] text-gray-400 block font-semibold">Total Durasi</span>
+                            <strong class="text-gray-900 text-xs block" id="detailStDuration">-</strong>
+                        </div>
+                        <div class="p-2.5 bg-gray-50 rounded-lg">
+                            <span class="text-[10px] text-gray-400 block font-semibold">Kontak HP / WA</span>
+                            <strong class="text-gray-900 text-xs truncate block" id="detailStPhone">-</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List Berkas Progres Bulanan Siswa (Terkumpul maupun Belum) -->
+                <div class="card overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between bg-[#fafafa]">
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-circle-check text-teal-600"></i>
+                                <span>Daftar Berkas Logbook Bulanan per Periode</span>
+                            </h4>
+                            <p class="text-[11px] text-gray-400 mt-0.5">
+                                Verifikasi dan lakukan ACC atau minta perbaikan berkas yang telah dikumpulkan.
+                            </p>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700" id="detailStMonthsSummary">
+                            -
+                        </span>
+                    </div>
+
+                    <div class="divide-y divide-gray-100" id="detailMonthsContainer">
+                        <!-- Populated dynamically via JS selectProgresStudent -->
+                    </div>
+                </div>
+
+                <!-- Bagian Pengisian Pesan Apresiasi / Akhir Magang untuk Siswa -->
+                <div class="card p-5 bg-white border border-gray-100 space-y-3.5" id="finalMessageCard">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-bold shrink-0 border border-amber-200 mt-0.5">
+                            <i class="fa-solid fa-ribbon"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">Pesan Apresiasi / Catatan Akhir untuk Anak Magang</h4>
+                            <p class="text-[11px] text-gray-500 mt-0.5">
+                                Pesan ini akan otomatis tampil di bagian <strong>Riwayat Magang (History)</strong> pada akun anak magang saat masa magang selesai.
+                            </p>
+                        </div>
+                        <span id="finalMessageCompleteBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                            Berkas Lengkap
+                        </span>
+                    </div>
+
+                    <form id="finalMessageForm" method="POST" action="" class="space-y-3">
+                        @csrf
+                        <textarea name="final_message" id="inputFinalMessage" rows="3" required
+                            placeholder="Contoh: Terima kasih atas dedikasi dan kerja keras Anda di Divisi Statistik Sosial. Hasil kerja sangat rapi, disiplin, dan mampu bekerjasama dengan tim dengan sangat baik. Semoga sukses selalu!"
+                            class="w-full text-xs p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 bg-gray-50/50 focus:bg-white resize-y transition leading-relaxed"></textarea>
+
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] text-gray-400 italic" id="finalMessageStatusText">
+                                Masukkan pesan atau apresiasi untuk siswa ini.
+                            </span>
+                            <button type="submit"
+                                class="px-4 py-2 rounded-xl bg-gray-900 hover:bg-black text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95">
+                                <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+                                <span>Simpan Pesan untuk Anak Magang</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            @else
+                <div class="card p-12 text-center text-gray-400">
+                    <i class="fa-solid fa-folder-open text-4xl text-gray-300 mb-2"></i>
+                    <h4 class="text-sm font-bold text-gray-700">Belum Ada Siswa Magang Aktif</h4>
+                    <p class="text-xs text-gray-400 mt-1">Daftar siswa magang aktif akan tampil di sini saat ada siswa yang melaksanakan magang.</p>
+                </div>
+            @endif
+        </div>
+
     </div>
 </div>
 
@@ -588,12 +613,15 @@
         </form>
     </div>
 </div>
+    </div>
+</div>
 
 <script>
     const logbookData = @json($logbookPayload);
 
-    let logbookCalYear = {{ \Carbon\Carbon::today()->year }};
-    let logbookCalMonth = {{ \Carbon\Carbon::today()->month }};
+    let logbookCalYear = {{ request('dari') ? \Carbon\Carbon::parse(request('dari'))->year : \Carbon\Carbon::today()->year }};
+    let logbookCalMonth = {{ request('dari') ? \Carbon\Carbon::parse(request('dari'))->month : \Carbon\Carbon::today()->month }};
+    const selectedLogbookDate = "{{ request('dari') ?: (request('tanggal') ?: '') }}";
 
     function changeLogbookCalMonth(delta) {
         logbookCalMonth += delta;
@@ -623,8 +651,11 @@
         const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
         for (let d = 1; d <= lastDay; d++) {
             const dateStr = logbookCalYear + '-' + String(logbookCalMonth).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+            const isSelected = (selectedLogbookDate && dateStr === selectedLogbookDate);
             const isToday = dateStr === todayStr;
-            const cls = isToday
+            const cls = isSelected
+                ? 'bg-gray-900 text-white font-bold shadow-xs'
+                : isToday
                 ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200 hover:bg-blue-100'
                 : 'text-gray-700 hover:bg-gray-100';
             html += `<button type="button" onclick="selectLogbookCalDate('${dateStr}')" class="py-1.5 flex flex-col items-center justify-center rounded-lg transition font-medium text-xs relative cursor-pointer ${cls}"><span>${d}</span></button>`;
@@ -637,7 +668,7 @@
         const keEl = document.getElementById('inputLogbookKe');
         if (dariEl) dariEl.value = dateStr;
         if (keEl) keEl.value = dateStr;
-        const form = document.querySelector('#main-content-logbook form');
+        const form = document.getElementById('logbookFilterForm') || document.querySelector('#main-content-logbook form');
         if (form) form.submit();
     }
 
@@ -794,5 +825,201 @@
         if (urlParams.get('subtab') === 'progres' || urlParams.get('progres_page')) {
             switchPegawaiLogbookSubtab('progres');
         }
+
+        // Initialize first active student in Berkas Progres Bulanan
+        if (typeof progressStudentsData !== 'undefined' && progressStudentsData.length > 0) {
+            const preselectedId = parseInt(urlParams.get('student_id')) || progressStudentsData[0].id;
+            selectProgresStudent(preselectedId);
+        }
     });
+
+    const progressStudentsData = @json($progressStudentsPayload ?? []);
+    let selectedProgresStudentId = null;
+
+    function selectProgresStudent(studentId) {
+        selectedProgresStudentId = studentId;
+        const student = progressStudentsData.find(s => s.id === studentId);
+        if (!student) return;
+
+        // Update active class in sidebar items
+        document.querySelectorAll('.progres-student-item').forEach(btn => {
+            btn.className = 'progres-student-item w-full p-3 rounded-xl border text-left transition flex items-start gap-3 cursor-pointer border-gray-100 hover:border-gray-300 bg-white';
+        });
+        const activeBtn = document.getElementById(`progres-student-btn-${studentId}`);
+        if (activeBtn) {
+            activeBtn.className = 'progres-student-item w-full p-3 rounded-xl border text-left transition flex items-start gap-3 cursor-pointer border-teal-600 bg-teal-50/40 shadow-xs';
+        }
+
+        // Header info
+        const avatarEl = document.getElementById('detailStAvatar');
+        if (avatarEl) avatarEl.textContent = (student.name || 'M').charAt(0).toUpperCase();
+        const nameEl = document.getElementById('detailStName');
+        if (nameEl) nameEl.textContent = student.name;
+        const subEl = document.getElementById('detailStSub');
+        if (subEl) subEl.textContent = `${student.institution} · ${student.major}`;
+        const divEl = document.getElementById('detailStDivision');
+        if (divEl) divEl.textContent = student.division;
+        const periodEl = document.getElementById('detailStPeriod');
+        if (periodEl) periodEl.textContent = `${student.start_date} s.d. ${student.end_date}`;
+        const durationEl = document.getElementById('detailStDuration');
+        if (durationEl) durationEl.textContent = `${student.total_months} Bulan (${student.uploaded_count} Terkumpul)`;
+        const phoneEl = document.getElementById('detailStPhone');
+        if (phoneEl) phoneEl.textContent = student.phone || '-';
+
+        const progressBadge = document.getElementById('detailStProgressBadge');
+        if (progressBadge) {
+            if (student.is_complete) {
+                progressBadge.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-circle-check text-[10px] mr-1"></i>Lengkap & Disetujui (${student.approved_count}/${student.total_months})</span>`;
+            } else {
+                progressBadge.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-clock text-[10px] mr-1"></i>${student.approved_count}/${student.total_months} Bulan Disetujui</span>`;
+            }
+        }
+
+        const summaryEl = document.getElementById('detailStMonthsSummary');
+        if (summaryEl) summaryEl.textContent = `${student.uploaded_count} dari ${student.total_months} bulan diunggah`;
+
+        // Render Months List
+        const monthsContainer = document.getElementById('detailMonthsContainer');
+        if (!monthsContainer) return;
+        monthsContainer.innerHTML = '';
+
+        if (!student.months || student.months.length === 0) {
+            monthsContainer.innerHTML = `<div class="p-8 text-center text-gray-400 text-xs">Periode magang siswa belum memiliki jadwal bulan aktif.</div>`;
+        } else {
+            student.months.forEach(m => {
+                const row = document.createElement('div');
+                row.className = 'p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/60 transition';
+
+                if (m.status !== 'unsubmitted') {
+                    // Uploaded card
+                    let statusBadgeHtml = '';
+                    if (m.status === 'approved') {
+                        statusBadgeHtml = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-emerald-200 bg-emerald-50 text-emerald-700"><i class="fa-solid fa-circle-check text-[10px]"></i> Disetujui (ACC)</span>`;
+                    } else if (m.status === 'rejected') {
+                        statusBadgeHtml = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-rose-200 bg-rose-50 text-rose-700"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Perlu Perbaikan</span>`;
+                    } else {
+                        statusBadgeHtml = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-amber-200 bg-amber-50 text-amber-700"><i class="fa-solid fa-clock text-[10px]"></i> Menunggu Verifikasi</span>`;
+                    }
+
+                    let actionsHtml = '';
+                    if (m.status !== 'approved') {
+                        actionsHtml += `
+                            <form method="POST" action="${m.approve_url}" class="inline-block m-0" onsubmit="return confirm('Apakah Anda yakin ingin MENYETUJUI (ACC) berkas bulan ${m.month_name} milik ${student.name.replace(/'/g, "\\'")}?');">
+                                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}'}">
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs active:scale-95">
+                                    <i class="fa-solid fa-check text-[11px]"></i>
+                                    <span>ACC</span>
+                                </button>
+                            </form>
+                        `;
+                    }
+                    actionsHtml += `
+                        <button type="button" onclick="openRejectProgresModal(${m.progress_id}, '${student.name.replace(/'/g, "\\'")}', '${m.month_name}')"
+                            class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center gap-1 active:scale-95" title="Minta Perbaikan / Revisi Berkas">
+                            <i class="fa-solid fa-pen text-[10px]"></i>
+                            <span>Perbaiki</span>
+                        </button>
+                    `;
+
+                    row.innerHTML = `
+                        <div class="flex items-start gap-3.5 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center shrink-0 text-sm mt-0.5">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+                            <div class="min-w-0 space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <strong class="text-xs font-bold text-gray-900">${m.month_name}</strong>
+                                    ${statusBadgeHtml}
+                                </div>
+                                <div>
+                                    <a href="${m.download_url}" target="_blank"
+                                        class="group inline-flex items-center gap-1.5 text-xs font-medium text-gray-800 hover:text-blue-600 transition"
+                                        title="Klik untuk membuka dokumen PDF">
+                                        <span class="truncate max-w-[200px] sm:max-w-xs group-hover:underline">${m.file_name}</span>
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-gray-400 group-hover:text-blue-600"></i>
+                                    </a>
+                                </div>
+                                <div class="text-[10px] text-gray-400">
+                                    ${m.file_size_formatted || ''} · Diunggah pada ${m.uploaded_at || '-'}
+                                </div>
+                                ${m.notes ? `<p class="text-[11px] text-gray-500 italic mt-0.5">Catatan siswa: "${m.notes}"</p>` : ''}
+                                ${m.feedback ? `<div class="p-2 bg-rose-50 border border-rose-100 rounded-lg text-rose-800 text-[11px] mt-1"><strong>Catatan revisi:</strong> ${m.feedback}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                            ${actionsHtml}
+                        </div>
+                    `;
+                } else {
+                    // Unsubmitted card
+                    row.innerHTML = `
+                        <div class="flex items-start gap-3.5 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 flex items-center justify-center shrink-0 text-sm mt-0.5">
+                                <i class="fa-regular fa-clock"></i>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <strong class="text-xs font-bold text-gray-700">${m.month_name}</strong>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                        <i class="fa-regular fa-circle text-[8px]"></i> Belum Dikumpulkan
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-gray-400">
+                                    Siswa belum mengunggah berkas logbook bertandatangan untuk periode bulan ini.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="self-end sm:self-center shrink-0">
+                            <span class="text-[11px] text-gray-400 italic">Menunggu unggahan</span>
+                        </div>
+                    `;
+                }
+
+                monthsContainer.appendChild(row);
+            });
+        }
+
+        // Setup Final Message Form
+        const messageForm = document.getElementById('finalMessageForm');
+        const inputMessage = document.getElementById('inputFinalMessage');
+        const completeBadge = document.getElementById('finalMessageCompleteBadge');
+        const statusText = document.getElementById('finalMessageStatusText');
+
+        if (messageForm) messageForm.action = student.save_message_url;
+        if (inputMessage) inputMessage.value = student.final_message || '';
+
+        if (statusText) {
+            if (student.is_complete) {
+                completeBadge?.classList.remove('hidden');
+                statusText.textContent = student.final_message
+                    ? 'Pesan telah tersimpan dan sudah tampil di akun siswa.'
+                    : 'Seluruh berkas bulanan siswa ini sudah lengkap! Silakan tuliskan pesan apresiasi akhir.';
+                statusText.className = 'text-[10px] text-emerald-700 font-semibold';
+            } else {
+                completeBadge?.classList.add('hidden');
+                statusText.textContent = student.final_message
+                    ? 'Pesan tersimpan (dapat diubah kapan saja).'
+                    : `Progres saat ini: ${student.approved_count} dari ${student.total_months} bulan disetujui. Anda dapat mengisi pesan akhir sekarang atau setelah lengkap.`;
+                statusText.className = 'text-[10px] text-gray-500 italic';
+            }
+        }
+    }
+
+    function filterProgresStudentList() {
+        const q = (document.getElementById('searchProgresStudentInput')?.value || '').toLowerCase().trim();
+        const items = document.querySelectorAll('.progres-student-item');
+        let visible = 0;
+        items.forEach(item => {
+            const name = item.getAttribute('data-name') || '';
+            const inst = item.getAttribute('data-inst') || '';
+            if (name.includes(q) || inst.includes(q)) {
+                item.style.display = '';
+                visible++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        const badge = document.getElementById('progresStudentCountBadge');
+        if (badge) badge.textContent = `${visible} Siswa`;
+    }
 </script>

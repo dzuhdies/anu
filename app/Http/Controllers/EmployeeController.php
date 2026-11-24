@@ -140,7 +140,13 @@ class EmployeeController extends Controller
             $q->orderBy('date', 'desc');
         };
 
-        $siswas = $queryStudent->with(['attendances' => $attendanceQuery, 'division', 'building', 'user.participantProfile'])
+        $siswas = $queryStudent->with([
+            'attendances' => $attendanceQuery,
+            'absensis' => $attendanceQuery,
+            'division',
+            'building',
+            'user.participantProfile'
+        ])
             ->orderBy('full_name', 'asc')
             ->get();
         $this->setStudentAbsensiPhotoUrls($siswas);
@@ -240,6 +246,163 @@ class EmployeeController extends Controller
         $monthlyProgresses = $progresQuery->paginate(15, ['*'], 'progres_page')->withQueryString();
         $monthlyProgressPendingCount = StudentMonthlyProgress::where('status', StudentMonthlyProgress::STATUS_PENDING)->count();
 
+        // Data Peserta Magang Aktif & Progres Bulanan Terstruktur (Layout Sidebar + Detail)
+        $activeStudentsForProgress = (clone $queryStudent)
+            ->with(['division', 'building', 'user.participantProfile', 'monthlyProgresses.reviewer'])
+            ->orderBy('full_name', 'asc')
+            ->get();
+
+        $progressStudentsPayload = $activeStudentsForProgress->map(function ($st) {
+            $start = $st->start_date ? Carbon::parse($st->start_date)->startOfMonth() : null;
+            $end = $st->end_date ? Carbon::parse($st->end_date)->startOfMonth() : null;
+
+            $months = [];
+            $uploadedCount = 0;
+            $approvedCount = 0;
+
+            if ($start && $end && $start <= $end) {
+                $cur = $start->copy();
+                while ($cur <= $end) {
+                    $m = $cur->month;
+                    $y = $cur->year;
+                    $prog = $st->monthlyProgresses->firstWhere(fn ($p) => $p->month == $m && $p->year == $y);
+
+                    if ($prog) {
+                        $uploadedCount++;
+                        if ($prog->status === 'approved') {
+                            $approvedCount++;
+                        }
+                    }
+
+                    $months[] = [
+                        'month' => $m,
+                        'year' => $y,
+                        'month_name' => $cur->locale('id')->isoFormat('MMMM Y'),
+                        'progress_id' => $prog?->id,
+                        'file_name' => $prog?->file_name,
+                        'file_size_formatted' => $prog?->file_size_formatted,
+                        'download_url' => $prog ? route('siswa.progres.download', $prog->id) : null,
+                        'status' => $prog ? $prog->status : 'unsubmitted',
+                        'status_badge' => $prog ? $prog->status_badge : 'bg-gray-100 text-gray-500 border-gray-200',
+                        'status_label' => $prog ? ($prog->status === 'approved' ? 'Disetujui (ACC)' : ($prog->status === 'rejected' ? 'Perlu Perbaikan' : 'Menunggu Review')) : 'Belum Dikumpulkan',
+                        'notes' => $prog?->notes,
+                        'feedback' => $prog?->feedback,
+                        'uploaded_at' => $prog?->updated_at?->locale('id')->isoFormat('D MMM Y, HH:mm'),
+                        'approve_url' => $prog ? route('pegawai.progres.approve', $prog->id) : null,
+                    ];
+                    $cur->addMonth();
+                }
+            }
+
+            $totalMonths = count($months);
+            $isComplete = ($totalMonths > 0 && $approvedCount === $totalMonths);
+
+            return [
+                'id' => $st->id,
+                'name' => $st->full_name,
+                'institution' => $st->institution ?: ($st->user?->participantProfile?->institution ?: '-'),
+                'major' => $st->user?->participantProfile?->major ?? '-',
+                'phone' => $st->user?->participantProfile?->phone ?? '-',
+                'email' => $st->user?->email ?? '-',
+                'division' => $st->division?->nama_divisi ?? '-',
+                'start_date' => $st->start_date ? Carbon::parse($st->start_date)->format('d/m/Y') : '-',
+                'end_date' => $st->end_date ? Carbon::parse($st->end_date)->format('d/m/Y') : '-',
+                'total_months' => $totalMonths,
+                'uploaded_count' => $uploadedCount,
+                'approved_count' => $approvedCount,
+                'is_complete' => $isComplete,
+                'final_message' => $st->final_message,
+                'save_message_url' => route('pegawai.siswa.final_message', $st->id),
+                'months' => $months,
+            ];
+        });
+
+        // Data Riwayat Alumni Magang (History)
+        $todayDate = Carbon::today()->toDateString();
+        $historyQuery = StudentProfile::query();
+        if ($employee && $employee->division_id) {
+            $historyQuery->where('division_id', $employee->division_id);
+        } elseif ($employee && $employee->building_id) {
+            $historyQuery->where('building_id', $employee->building_id);
+        }
+
+        $historyStudentsRaw = $historyQuery
+            ->with([
+                'division',
+                'building',
+                'user.participantProfile',
+                'attendances.leaveType',
+                'logbooks',
+                'monthlyProgresses'
+            ])
+            ->orderBy('end_date', 'desc')
+            ->get();
+
+        $historyStudents = $historyStudentsRaw->map(function ($st) use ($todayDate) {
+            $attendances = $st->attendances;
+            $totalHari = $attendances->count();
+            $totalHadir = $attendances->where('attendance_status', true)->count();
+            $totalTelat = $attendances->where('punctuality_status', 'Terlambat')->count();
+            $totalIzin = $attendances->where('is_permission', true)->count();
+            $persenHadir = $totalHari > 0 ? round(($totalHadir / $totalHari) * 100) : 100;
+
+            $pProfile = $st->user?->participantProfile;
+            $cvUrl = $pProfile?->cv_path ? (str_starts_with($pProfile->cv_path, 'http') ? $pProfile->cv_path : asset('storage/' . $pProfile->cv_path)) : null;
+            $portoUrl = $pProfile?->portofolio_path ? (str_starts_with($pProfile->portofolio_path, 'http') ? $pProfile->portofolio_path : asset('storage/' . $pProfile->portofolio_path)) : ($pProfile?->portofolio_url ?? null);
+
+            $isEnded = $st->end_date && Carbon::parse($st->end_date)->endOfDay()->lt(now());
+
+            return [
+                'id' => $st->id,
+                'name' => $st->full_name,
+                'username' => $st->user?->username ?? '-',
+                'email' => $st->user?->email ?? '-',
+                'phone' => $pProfile?->phone ?? '-',
+                'institution' => $st->institution ?: ($pProfile?->institution ?: '-'),
+                'major' => $pProfile?->major ?? '-',
+                'division' => $st->division?->nama_divisi ?? '-',
+                'building' => $st->building?->name ?? 'Kantor BPS',
+                'start_date' => $st->start_date ? Carbon::parse($st->start_date)->format('d/m/Y') : '-',
+                'end_date' => $st->end_date ? Carbon::parse($st->end_date)->format('d/m/Y') : '-',
+                'is_ended' => $isEnded,
+                'cv_url' => $cvUrl,
+                'porto_url' => $portoUrl,
+                'final_message' => $st->final_message,
+                'stats' => [
+                    'total_hari' => $totalHari,
+                    'total_hadir' => $totalHadir,
+                    'total_telat' => $totalTelat,
+                    'total_izin' => $totalIzin,
+                    'persen_hadir' => $persenHadir,
+                    'total_logbook' => $st->logbooks->count(),
+                    'approved_logbook' => $st->logbooks->where('status', 'approved')->count(),
+                    'total_progres' => $st->monthlyProgresses->count(),
+                    'approved_progres' => $st->monthlyProgresses->where('status', 'approved')->count(),
+                ],
+                'attendances' => $attendances->sortByDesc('date')->values()->map(fn ($att) => [
+                    'tanggal' => Carbon::parse($att->date)->translatedFormat('l, d F Y'),
+                    'jam_masuk' => $att->check_in_time ? Carbon::parse($att->check_in_time)->format('H:i') : null,
+                    'jam_pulang' => $att->check_out_time ? Carbon::parse($att->check_out_time)->format('H:i') : null,
+                    'status_kehadiran' => $att->punctuality_status ?: ($att->check_in_time ? 'Hadir' : ($att->is_permission ? 'Izin' : 'Tidak Hadir')),
+                    'keterangan' => $att->leaveType?->name ?? ($att->is_wfh ? 'WFH' : 'WFO'),
+                ]),
+                'logbooks' => $st->logbooks->sortByDesc('date')->values()->map(fn ($lb) => [
+                    'tanggal' => Carbon::parse($lb->date)->translatedFormat('l, d F Y'),
+                    'activity' => $lb->activity,
+                    'obstacle' => $lb->obstacle,
+                    'status' => $lb->status,
+                    'status_badge' => $lb->status_badge,
+                ]),
+                'monthly_progresses' => $st->monthlyProgresses->sortByDesc('month')->values()->map(fn ($mp) => [
+                    'month_name' => Carbon::createFromDate($mp->year, $mp->month, 1)->locale('id')->isoFormat('MMMM Y'),
+                    'file_name' => $mp->file_name,
+                    'download_url' => route('siswa.progres.download', $mp->id),
+                    'status' => $mp->status,
+                    'status_badge' => $mp->status_badge,
+                ]),
+            ];
+        });
+
         $activeTab = $request->input('tab', ($dariInput || $keInput || $tanggal || $bulan) ? 'absensi' : 'pendaftaran');
 
         $logMessage = 'Pegawai melihat dashboard presensi & seleksi';
@@ -287,7 +450,9 @@ class EmployeeController extends Controller
             'logbookStats',
             'logbookPayload',
             'monthlyProgresses',
-            'monthlyProgressPendingCount'
+            'monthlyProgressPendingCount',
+            'progressStudentsPayload',
+            'historyStudents'
         ));
     }
 
@@ -558,5 +723,35 @@ class EmployeeController extends Controller
         }
 
         return back()->with('error', 'Mode pengaturan WFH tidak valid.');
+    }
+
+    public function saveFinalMessage(Request $request, $id)
+    {
+        $request->validate([
+            'final_message' => 'required|string|max:5000',
+        ], [
+            'final_message.required' => 'Pesan apresiasi / catatan akhir magang wajib diisi.',
+        ]);
+
+        $student = StudentProfile::findOrFail($id);
+        $student->update([
+            'final_message' => $request->final_message,
+        ]);
+
+        LogHelper::success(
+            $request,
+            'Simpan Pesan Akhir Magang',
+            "Pegawai mengisi pesan apresiasi akhir magang untuk siswa {$student->full_name}."
+        );
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Pesan apresiasi berhasil disimpan dan akan tampil di akun anak magang.',
+                'final_message' => $student->final_message,
+            ]);
+        }
+
+        return back()->with('success', 'Pesan apresiasi berhasil disimpan dan akan tampil di halaman riwayat akun siswa.');
     }
 }

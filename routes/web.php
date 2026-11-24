@@ -83,6 +83,7 @@ Route::middleware(['auth', 'role:admin,pegawai'])->group(function () {
     // Pengaturan WFH Siswa (Admin & Pegawai)
     Route::post('/siswa/{id}/set-wfh', [EmployeeController::class, 'setWfh'])->name('siswa.set_wfh');
     Route::post('/pegawai/siswa/{id}/set-wfh', [EmployeeController::class, 'setWfh'])->name('pegawai.siswa.set_wfh');
+    Route::post('/pegawai/siswa/{id}/final-message', [EmployeeController::class, 'saveFinalMessage'])->name('pegawai.siswa.final_message');
     Route::post('/logbook/toggle', [AdminController::class, 'toggleLogbook'])->name('logbook.toggle');
     Route::post('/logbook/toggle', [AdminController::class, 'toggleLogbook'])->name('logbook.toggle');
 });
