@@ -150,6 +150,19 @@ class EmployeeController extends Controller
             $applicationQuery->where('division_id', $employee->division_id);
         }
         $pendaftarans = $applicationQuery->latest()->get();
+        
+        // Attach min_remaining_quota to each application for the UI
+        foreach ($pendaftarans as $p) {
+            if (($p->status === 'pending' || $p->status === 'rescheduled') && $p->division) {
+                $check = $p->division->checkAvailability(
+                    $p->start_date->toDateString(), 
+                    $p->end_date->toDateString(), 
+                    $p->members->count()
+                );
+                $p->min_remaining_quota = $check['min_remaining_quota'];
+            }
+        }
+
         $pendingCount = $pendaftarans->where('status', 'pending')->count();
         $divisis = Division::where('is_active', true)->orderBy('name')->get();
 
@@ -265,7 +278,14 @@ class EmployeeController extends Controller
         $gedung = $building;
         $divisiPegawai = $employeeDivision;
 
+        // Hitung sisa kuota hari ini untuk divisi pegawai (agar mudah dibaca di sidebar)
+        $sisaKuotaHariIni = 0;
+        if ($divisiPegawai) {
+            $sisaKuotaHariIni = $divisiPegawai->getRemainingQuotaAttribute();
+        }
+
         return view('pegawai.absensi', compact(
+            'sisaKuotaHariIni',
             'siswas',
             'all_siswas',
             'tanggal',

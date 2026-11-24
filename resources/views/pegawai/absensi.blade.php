@@ -258,6 +258,12 @@
 
                                 {{ $divisiPegawai ? $divisiPegawai->nama_divisi : 'Semua Divisi' }}
                             </span>
+                        @if($sisaKuotaHariIni > 0)
+                        <div class="pt-2 px-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+                            <span class="font-semibold text-[10px] uppercase">Sisa Kuota Hari Ini</span>
+                            <span class="text-[11px] font-bold text-emerald-600">{{ $sisaKuotaHariIni }} Kursi</span>
+                        </div>
+                        @endif
                         </div>
                         <div class="pt-2 border-t border-gray-50">
                             <span class="text-gray-400 block text-[10px] uppercase font-semibold">Lokasi Gedung</span>
@@ -2628,6 +2634,13 @@
                 </div>
 
                 ${rescheduleNotice}
+
+                <div class="p-3 bg-white border border-gray-100 rounded-xl text-xs text-gray-800 space-y-1">
+                    <span class="font-bold text-gray-900">Sisa Kuota:</span>
+                    <span class="font-bold ${item.min_remaining_quota > 0 ? 'text-emerald-600' : 'text-rose-600'}">
+                        ${item.min_remaining_quota}
+                    </span>
+                </div>
 
                 <div>
                     <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
