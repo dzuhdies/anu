@@ -27,6 +27,53 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
+    public function checkUsername(Request $request)
+    {
+        $username = trim($request->query('username', ''));
+
+        if ($username === '') {
+            return response()->json([
+                'available' => false,
+                'message' => 'Username wajib diisi.',
+            ]);
+        }
+
+        if (strlen($username) < 4) {
+            return response()->json([
+                'available' => false,
+                'message' => 'Username minimal 4 karakter.',
+            ]);
+        }
+
+        if (strlen($username) > 50) {
+            return response()->json([
+                'available' => false,
+                'message' => 'Username maksimal 50 karakter.',
+            ]);
+        }
+
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $username)) {
+            return response()->json([
+                'available' => false,
+                'message' => 'Username hanya boleh huruf, angka, tanda hubung (-), dan garis bawah (_).',
+            ]);
+        }
+
+        $exists = User::where('username', $username)->exists();
+
+        if ($exists) {
+            return response()->json([
+                'available' => false,
+                'message' => 'Username sudah digunakan oleh pengguna lain.',
+            ]);
+        }
+
+        return response()->json([
+            'available' => true,
+            'message' => 'Username tersedia.',
+        ]);
+    }
+
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [

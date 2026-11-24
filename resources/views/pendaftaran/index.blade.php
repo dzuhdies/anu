@@ -1603,6 +1603,7 @@
             }
 
             updateFormState();
+            resetQuotaCheckedStatus();
         }
 
         function updateFormState() {

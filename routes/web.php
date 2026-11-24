@@ -36,6 +36,7 @@ Route::get('/public/storage/absen/{path}', [StudentController::class, 'showFotoA
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware('guest');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register')->middleware('guest');
+Route::get('/register/check-username', [AuthController::class, 'checkUsername'])->name('register.check_username');
 Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');

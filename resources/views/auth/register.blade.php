@@ -53,7 +53,7 @@
         </div>
         @endif
 
-        <form method="POST" action="{{ route('register.submit') }}" class="space-y-4">
+        <form id="registerForm" method="POST" action="{{ route('register.submit') }}" class="space-y-4">
             @csrf
 
             <div>
@@ -63,11 +63,14 @@
                         <i class="fas fa-user"></i>
                     </span>
                     <input type="text" id="username" name="username" value="{{ old('username') }}"
-                        class="block w-full pl-9 pr-4 py-2.5 bg-gray-50/70 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition"
+                        class="block w-full pl-9 pr-9 py-2.5 bg-gray-50/70 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition"
                         placeholder="Masukkan username"
+                        autocomplete="off"
                         required autofocus>
+                    <span id="username-status-icon" class="absolute inset-y-0 right-0 pr-3 flex items-center text-xs hidden">
+                    </span>
                 </div>
-                <p class="text-[11px] text-gray-400 mt-1">Digunakan untuk login ke sistem dan bergabung kelompok.</p>
+                <p id="username-status-msg" class="text-[11px] text-gray-400 mt-1">Digunakan untuk login ke sistem dan bergabung kelompok.</p>
             </div>
 
             <div>
@@ -92,6 +95,7 @@
                         required>
                     <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility('password', this)"></i>
                 </div>
+                <p id="password-status-msg" class="text-[11px] mt-1 hidden"></p>
             </div>
 
             <div>
@@ -103,11 +107,12 @@
                         required>
                     <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility('password_confirmation', this)"></i>
                 </div>
+                <p id="confirm-status-msg" class="text-[11px] mt-1 hidden"></p>
             </div>
 
             <div class="pt-2">
-                <button type="submit"
-                    class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl shadow-md shadow-orange-200 font-bold text-xs text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition active:scale-95">
+                <button type="submit" id="submitBtn"
+                    class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl shadow-md shadow-orange-200 font-bold text-xs text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">
                     <i class="fas fa-user-plus"></i>
                     <span>Daftar Akun Sekarang</span>
                 </button>
@@ -135,6 +140,231 @@
                 iconEl.classList.remove('fa-eye-slash');
                 iconEl.classList.add('fa-eye');
             }
+        }
+
+        // Real-time Validation States
+        let isUsernameValid = false;
+        let isUsernameChecking = false;
+        let usernameDebounceTimer = null;
+
+        const usernameInput = document.getElementById('username');
+        const usernameIcon = document.getElementById('username-status-icon');
+        const usernameMsg = document.getElementById('username-status-msg');
+
+        const passwordInput = document.getElementById('password');
+        const passwordMsg = document.getElementById('password-status-msg');
+
+        const confirmInput = document.getElementById('password_confirmation');
+        const confirmMsg = document.getElementById('confirm-status-msg');
+
+        const defaultUsernameMsg = 'Digunakan untuk login ke sistem dan bergabung kelompok.';
+
+        function setFieldState(inputEl, iconEl, msgEl, state, message) {
+            // state: 'neutral', 'loading', 'valid', 'invalid', 'warning'
+            inputEl.classList.remove(
+                'border-rose-400', 'focus:ring-rose-500', 'focus:border-rose-500',
+                'border-emerald-400', 'focus:ring-emerald-500', 'focus:border-emerald-500',
+                'border-amber-400', 'focus:ring-amber-500', 'focus:border-amber-500',
+                'border-gray-200'
+            );
+
+            if (state === 'neutral') {
+                inputEl.classList.add('border-gray-200');
+                if (iconEl) iconEl.classList.add('hidden');
+                if (msgEl) {
+                    msgEl.className = 'text-[11px] text-gray-400 mt-1';
+                    msgEl.textContent = message || '';
+                    if (!message) msgEl.classList.add('hidden');
+                    else msgEl.classList.remove('hidden');
+                }
+            } else if (state === 'loading') {
+                inputEl.classList.add('border-gray-200');
+                if (iconEl) {
+                    iconEl.classList.remove('hidden');
+                    iconEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-orange-500"></i>';
+                }
+                if (msgEl) {
+                    msgEl.className = 'text-[11px] text-gray-500 mt-1';
+                    msgEl.textContent = message;
+                    msgEl.classList.remove('hidden');
+                }
+            } else if (state === 'valid') {
+                inputEl.classList.add('border-emerald-400', 'focus:ring-emerald-500', 'focus:border-emerald-500');
+                if (iconEl) {
+                    iconEl.classList.remove('hidden');
+                    iconEl.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+                }
+                if (msgEl) {
+                    msgEl.className = 'text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1';
+                    msgEl.innerHTML = `<i class="fa-solid fa-check text-[10px]"></i> ${message}`;
+                    msgEl.classList.remove('hidden');
+                }
+            } else if (state === 'invalid') {
+                inputEl.classList.add('border-rose-400', 'focus:ring-rose-500', 'focus:border-rose-500');
+                if (iconEl) {
+                    iconEl.classList.remove('hidden');
+                    iconEl.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-500"></i>';
+                }
+                if (msgEl) {
+                    msgEl.className = 'text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1';
+                    msgEl.innerHTML = `<i class="fa-solid fa-xmark text-[10px]"></i> ${message}`;
+                    msgEl.classList.remove('hidden');
+                }
+            } else if (state === 'warning') {
+                inputEl.classList.add('border-amber-400', 'focus:ring-amber-500', 'focus:border-amber-500');
+                if (iconEl) {
+                    iconEl.classList.remove('hidden');
+                    iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i>';
+                }
+                if (msgEl) {
+                    msgEl.className = 'text-[11px] text-amber-600 font-semibold mt-1 flex items-center gap-1';
+                    msgEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-[10px]"></i> ${message}`;
+                    msgEl.classList.remove('hidden');
+                }
+            }
+        }
+
+        // 1. Username Real-time Validation & Availability Check
+        async function validateUsernameNow() {
+            const raw = usernameInput.value;
+            const val = raw.trim();
+
+            if (!val) {
+                isUsernameValid = false;
+                setFieldState(usernameInput, usernameIcon, usernameMsg, 'neutral', defaultUsernameMsg);
+                return;
+            }
+
+            if (val.length < 4) {
+                isUsernameValid = false;
+                setFieldState(usernameInput, usernameIcon, usernameMsg, 'invalid', 'Username minimal 4 karakter.');
+                return;
+            }
+
+            if (val.length > 50) {
+                isUsernameValid = false;
+                setFieldState(usernameInput, usernameIcon, usernameMsg, 'invalid', 'Username maksimal 50 karakter.');
+                return;
+            }
+
+            const alphaDashRegex = /^[A-Za-z0-9_-]+$/;
+            if (!alphaDashRegex.test(val)) {
+                isUsernameValid = false;
+                setFieldState(usernameInput, usernameIcon, usernameMsg, 'invalid', 'Hanya boleh huruf, angka, tanda hubung (-), dan garis bawah (_).');
+                return;
+            }
+
+            // Check availability with backend
+            isUsernameChecking = true;
+            setFieldState(usernameInput, usernameIcon, usernameMsg, 'loading', 'Memeriksa ketersediaan username...');
+
+            try {
+                const response = await fetch(`{{ route('register.check_username') }}?username=${encodeURIComponent(val)}`);
+                const result = await response.json();
+
+                // Pastikan input belum berubah saat response tiba
+                if (usernameInput.value.trim() !== val) return;
+
+                if (result.available) {
+                    isUsernameValid = true;
+                    setFieldState(usernameInput, usernameIcon, usernameMsg, 'valid', result.message || 'Username tersedia.');
+                } else {
+                    isUsernameValid = false;
+                    setFieldState(usernameInput, usernameIcon, usernameMsg, 'invalid', result.message || 'Username sudah digunakan.');
+                }
+            } catch (err) {
+                // If network fails, don't hard block
+                isUsernameValid = true;
+                setFieldState(usernameInput, usernameIcon, usernameMsg, 'neutral', defaultUsernameMsg);
+            } finally {
+                isUsernameChecking = false;
+            }
+        }
+
+        usernameInput.addEventListener('input', function () {
+            clearTimeout(usernameDebounceTimer);
+            usernameDebounceTimer = setTimeout(validateUsernameNow, 350);
+        });
+
+        usernameInput.addEventListener('blur', function () {
+            clearTimeout(usernameDebounceTimer);
+            validateUsernameNow();
+        });
+
+        // 2. Password & Konfirmasi Password Real-time Check
+        function validatePasswordPair() {
+            const pwd = passwordInput.value;
+            const conf = confirmInput.value;
+
+            // Password check
+            if (!pwd) {
+                setFieldState(passwordInput, null, passwordMsg, 'neutral', '');
+            } else if (pwd.length < 6) {
+                setFieldState(passwordInput, null, passwordMsg, 'invalid', 'Password minimal 6 karakter.');
+            } else {
+                setFieldState(passwordInput, null, passwordMsg, 'valid', 'Password memenuhi syarat.');
+            }
+
+            // Confirmation check
+            if (!conf) {
+                setFieldState(confirmInput, null, confirmMsg, 'neutral', '');
+                return;
+            }
+
+            if (conf !== pwd) {
+                setFieldState(confirmInput, null, confirmMsg, 'invalid', 'Konfirmasi password tidak cocok.');
+            } else {
+                if (pwd.length < 6) {
+                    setFieldState(confirmInput, null, confirmMsg, 'warning', 'Password cocok, tetapi masih kurang dari 6 karakter.');
+                } else {
+                    setFieldState(confirmInput, null, confirmMsg, 'valid', 'Konfirmasi password cocok.');
+                }
+            }
+        }
+
+        passwordInput.addEventListener('input', validatePasswordPair);
+        confirmInput.addEventListener('input', validatePasswordPair);
+
+        // 3. Form Submit Safeguard
+        document.getElementById('registerForm').addEventListener('submit', function (e) {
+            const pwd = passwordInput.value;
+            const conf = confirmInput.value;
+            const userVal = usernameInput.value.trim();
+
+            if (!userVal || userVal.length < 4 || !/^[A-Za-z0-9_-]+$/.test(userVal)) {
+                e.preventDefault();
+                validateUsernameNow();
+                usernameInput.focus();
+                return;
+            }
+
+            if (!isUsernameValid && !isUsernameChecking) {
+                e.preventDefault();
+                usernameInput.focus();
+                return;
+            }
+
+            if (pwd.length < 6) {
+                e.preventDefault();
+                validatePasswordPair();
+                passwordInput.focus();
+                return;
+            }
+
+            if (conf !== pwd) {
+                e.preventDefault();
+                validatePasswordPair();
+                confirmInput.focus();
+                return;
+            }
+        });
+
+        // Initial check if old values exist
+        if (usernameInput.value.trim().length >= 4) {
+            validateUsernameNow();
+        }
+        if (passwordInput.value || confirmInput.value) {
+            validatePasswordPair();
         }
     </script>
 </body>
