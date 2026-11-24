@@ -21,6 +21,7 @@ class StudentProfile extends Model
         'wfh_start_date',
         'wfh_end_date',
         'wfh_notes',
+        'final_message',
         'can_shortcut',
         'shortcut_lat',
         'shortcut_long',
@@ -136,7 +137,7 @@ class StudentProfile extends Model
 
     public function absensis(): HasMany
     {
-        return $this->attendances();
+        return $this->hasMany(Attendance::class, 'student_id');
     }
 
     // Backward-compatible accessors

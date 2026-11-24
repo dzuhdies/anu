@@ -185,7 +185,7 @@ class LogbookController extends Controller
         } elseif ($isFuture) {
             $lockReason = 'Logbook untuk tanggal mendatang belum dapat diisi.';
         } elseif ($isApproved) {
-            $lockReason = 'Logbook sudah disetujui oleh admin/pegawai dan tidak dapat diubah lagi.';
+            $lockReason = 'Logbook sudah disetujui dan tidak dapat diubah lagi.';
         } elseif (!$isDateEditable) {
             $lockReason = 'Batas pengisian logbook (H+1) telah terlewat. Logbook tanggal ini sudah terkunci permanen.';
         }
@@ -209,7 +209,7 @@ class LogbookController extends Controller
                 'status_label' => $logbook->status_label,
                 'status_badge' => $logbook->status_badge,
                 'review_note' => $logbook->review_note,
-                'reviewed_by' => $logbook->reviewer?->username ?? 'Admin/Pegawai',
+                'reviewed_by' => $logbook->reviewer?->username ?? '',
                 'reviewed_at' => $logbook->reviewed_at ? $logbook->reviewed_at->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : null,
             ] : null,
         ]);
@@ -325,8 +325,8 @@ class LogbookController extends Controller
         );
 
         $successMsg = $existing
-            ? "Logbook tanggal {$dateLabel} berhasil diperbarui dan menunggu review admin."
-            : "Logbook tanggal {$dateLabel} berhasil disimpan dan menunggu review admin.";
+            ? "Logbook tanggal {$dateLabel} berhasil diperbarui dan menunggu review."
+            : "Logbook tanggal {$dateLabel} berhasil disimpan dan menunggu review.";
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

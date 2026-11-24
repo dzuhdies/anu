@@ -21,27 +21,6 @@
                 </button>
             </div>
 
-            <!-- Ringkasan Progres -->
-            <div class="p-3.5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100 flex items-center justify-between text-xs">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-                        <i class="fa-solid fa-file-signature"></i>
-                    </div>
-                    <div>
-                        <span class="font-bold text-gray-900 block" id="progresSummaryTitle">Ringkasan Berkas Bulanan</span>
-                        <span class="text-[11px] text-gray-500" id="progresSummarySubtitle">
-                            {{ $progressData['total_approved'] ?? 0 }} dari {{ $progressData['total_months'] ?? 0 }} berkas telah disetujui (ACC)
-                        </span>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <span class="text-[10px] uppercase font-bold text-orange-600 block tracking-wider">Status Berkas</span>
-                    <span class="text-xs font-bold text-gray-800" id="progresSummaryRatio">
-                        {{ ($progressData['total_months'] ?? 0) > 0 && ($progressData['total_approved'] ?? 0) === ($progressData['total_months'] ?? 0) ? 'Lengkap (ACC)' : 'Dalam Proses' }}
-                    </span>
-                </div>
-            </div>
-
             <!-- Daftar List Bulan (Rendered via Blade / Refreshed via JS) -->
             <div id="progresListContainer" class="space-y-3 pt-1">
                 @if(isset($progressData['months']) && count($progressData['months']) > 0)

@@ -157,7 +157,7 @@ class InternshipApplicationController extends Controller
         return view('pendaftaran.index', compact(
             'user', 'pesertaProfile', 'pendaftaran', 'anggotaRecord', 
             'divisis', 'activeTab', 'magangBelumMulai', 'magangSudahMulai', 'hariMenujuMulai', 'tglMulaiCarbon',
-            'historyMagang', 'historyAbsensiStats', 'historyAbsensis'
+            'historyMagang', 'historyAbsensiStats', 'historyAbsensis', 'studentProfile'
         ));
     }
 

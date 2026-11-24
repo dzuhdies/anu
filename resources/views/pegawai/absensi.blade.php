@@ -245,6 +245,13 @@
                                 @endif
                             </button>
                         </li>
+                        <li>
+                            <button onclick="showMainContent('history'); closeSidebarMobile();" id="side-nav-history"
+                                class="sidebar-nav-link w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                                <span class="flex items-center gap-3"><i class="fa-solid fa-clock-rotate-left w-4 text-center text-teal-600"></i> Riwayat Alumni</span>
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">{{ count($historyStudents ?? []) }}</span>
+                            </button>
+                        </li>
                     </ul>
                 </div>
 
@@ -789,7 +796,11 @@
                                             <!-- Mode Harian: 1 Baris per Siswa -->
                                             @forelse ($siswas as $siswa)
                                                 @php
-                                                    $absensi = $siswa->absensis->first();
+                                                    $targetDateStr = $dari ?: ($activeTanggal ?: now()->toDateString());
+                                                    $absensi = $siswa->absensis->first(function ($att) use ($targetDateStr) {
+                                                        $attDate = $att->date ? (is_string($att->date) ? substr($att->date, 0, 10) : $att->date->format('Y-m-d')) : null;
+                                                        return $attDate === $targetDateStr;
+                                                    });
                                                     $isHadir = (bool)$absensi;
                                                     $isIzin = $absensi && $absensi->izin;
                                                     $isTerlambat = $absensi && ($absensi->status_ketepatan === 'Terlambat');
@@ -1313,6 +1324,10 @@
                     @include('pegawai.partials.logbook-tab')
                 </div>
 
+                <div id="main-content-history" class="main-content-view hidden space-y-6">
+                    @include('pegawai.partials.history-tab')
+                </div>
+
             </div>
 
     </div>
@@ -1350,6 +1365,22 @@
                 title="Kalender Kuota">
                 <i class="fa-solid fa-calendar-days text-base"></i>
                 <span class="text-[9px] font-semibold">Kalender</span>
+            </button>
+
+            <!-- TAB 5: LOGBOOK -->
+            <button type="button" onclick="showMainContent('logbook')" id="pegawai-bottom-nav-logbook"
+                class="transition-all active:scale-90 text-gray-400 hover:text-gray-600 flex flex-col items-center justify-center gap-0.5"
+                title="Logbook">
+                <i class="fa-solid fa-book-open text-base"></i>
+                <span class="text-[9px] font-semibold">Logbook</span>
+            </button>
+
+            <!-- TAB 6: RIWAYAT ALUMNI -->
+            <button type="button" onclick="showMainContent('history')" id="pegawai-bottom-nav-history"
+                class="transition-all active:scale-90 text-gray-400 hover:text-gray-600 flex flex-col items-center justify-center gap-0.5"
+                title="Riwayat Alumni">
+                <i class="fa-solid fa-clock-rotate-left text-base"></i>
+                <span class="text-[9px] font-semibold">Riwayat</span>
             </button>
         </nav>
     </div>
@@ -2217,7 +2248,7 @@
             if (activeSideBtn) activeSideBtn.classList.add('active');
 
             // Update Mobile Bottom Nav State
-            ['pendaftaran', 'absensi', 'siswa', 'kalender'].forEach(item => {
+            ['pendaftaran', 'absensi', 'siswa', 'kalender', 'logbook', 'history'].forEach(item => {
                 const bBtn = document.getElementById(`pegawai-bottom-nav-${item}`);
                 if (bBtn) {
                     if (item === contentToShow) {
@@ -2238,7 +2269,8 @@
                     'absensi': 'Rekap Presensi & Kehadiran Siswa',
                     'siswa': 'Daftar Siswa Magang Aktif',
                     'kalender': 'Kalender Sisa Kuota Divisi',
-                    'logbook': 'Review Logbook Siswa'
+                    'logbook': 'Review Logbook & Berkas Bulanan',
+                    'history': 'Riwayat Alumni Peserta Magang'
                 };
                 breadcrumbEl.textContent = titles[contentToShow] || 'Portal Pegawai';
             }
@@ -3499,7 +3531,7 @@
         }
 
         function filterByDate(dateStr) {
-            window.location.href = `{{ route('pegawai.absensi.rekap') }}?tab=absensi&dari=${dateStr}&ke=${dateStr}`;
+            window.location.href = `{{ route('pegawai.absensi.rekap') }}?tab=absensi&tanggal=${dateStr}&dari=${dateStr}&ke=${dateStr}`;
         }
 
         function jumpToday() {

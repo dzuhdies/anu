@@ -1225,7 +1225,7 @@
                 } else if (data.logbook.status === 'approved') {
                     alertApproved?.classList.remove('hidden');
                     if (metaApproved) {
-                        metaApproved.textContent = `Disetujui oleh ${data.logbook.reviewed_by}` + (data.logbook.reviewed_at ? ` · ${data.logbook.reviewed_at}` : '');
+                        metaApproved.textContent = `Disetujui pada ${data.logbook.reviewed_at || ''}`;
                     }
                 }
             } else {
@@ -1435,7 +1435,7 @@
                         <i class="fa-solid fa-calendar-xmark text-3xl text-gray-300"></i>
                         <h5 class="text-xs font-bold text-gray-600">Periode Magang Belum Ditetapkan</h5>
                         <p class="text-[11px] text-gray-400 max-w-sm mx-auto">
-                            Tanggal mulai dan selesai magang belum diatur oleh admin/pegawai.
+                            Tanggal mulai dan selesai magang belum diatur
                         </p>
                     </div>`;
                 return;

@@ -1408,7 +1408,7 @@
                                         <div>
                                             <strong class="text-teal-950 font-bold block mb-0.5">Apresiasi dari BPS Kota Malang</strong>
                                             <p class="text-teal-900 text-[11px] leading-relaxed">
-                                                Terima kasih banyak atas dedikasi, kedisiplinan, dan kontribusi nyata Anda selama melaksanakan program Praktik Kerja Lapangan / Magang di Badan Pusat Statistik Kota Malang. Semoga ilmu dan pengalaman yang didapatkan membawa manfaat bagi masa depan karir dan akademik Anda!
+                                                {{ ($studentProfile?->final_message ?? (Auth::user()->studentProfile?->final_message)) ?: 'Terima kasih banyak atas dedikasi, kedisiplinan, dan kontribusi nyata Anda selama melaksanakan program Praktik Kerja Lapangan / Magang di Badan Pusat Statistik Kota Malang. Semoga ilmu dan pengalaman yang didapatkan membawa manfaat bagi masa depan karir dan akademik Anda!' }}
                                             </p>
                                         </div>
                                     </div>
