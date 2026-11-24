@@ -493,38 +493,27 @@
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                                    <div class="sm:col-span-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                                    <div>
                                         <label class="block text-xs font-semibold text-gray-700 mb-1">
                                             Tanggal Mulai <span class="text-rose-500">*</span>
                                         </label>
                                         <input type="date" name="tanggal_mulai" id="inputTglMulai" required
-                                            min="{{ date('Y-m-d') }}" value="{{ old('tanggal_mulai') }}" onchange="resetQuotaCheckedStatus()"
+                                            min="{{ date('Y-m-d') }}" value="{{ old('tanggal_mulai') }}" onchange="updateFormState()"
                                             class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white">
                                     </div>
 
-                                    <div class="sm:col-span-4">
+                                    <div>
                                         <label class="block text-xs font-semibold text-gray-700 mb-1">
                                             Tanggal Selesai <span class="text-rose-500">*</span>
                                         </label>
                                         <input type="date" name="tanggal_selesai" id="inputTglSelesai" required
-                                            min="{{ date('Y-m-d') }}" value="{{ old('tanggal_selesai') }}" onchange="resetQuotaCheckedStatus()"
+                                            min="{{ date('Y-m-d') }}" value="{{ old('tanggal_selesai') }}" onchange="updateFormState()"
                                             class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white">
                                     </div>
-
-                                    <div class="sm:col-span-4">
-                                        <button type="button" onclick="performQuotaCheck()" id="btnPerformQuotaCheck"
-                                            class="w-full py-2.5 px-3 rounded-lg bg-gray-900 hover:bg-black text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-2 transition cursor-pointer">
-                                            <i class="fa-solid fa-magnifying-glass-chart"></i>
-                                            <span>Cek Ketersediaan Kuota</span>
-                                        </button>
-                                    </div>
                                 </div>
 
-                                <!-- Box Indikator Pengecekan Kuota & Breakdown Bulanan -->
-                                <div id="quotaCheckResult" class="hidden space-y-3 pt-2">
-                                    <!-- Diisi via JavaScript performQuotaCheck -->
-                                </div>
+
                             </div>
 
                             <!-- 4. Anggota Kelompok Tambahan (Aktif Setelah Kuota Tanggal Tersedia) -->
@@ -547,18 +536,18 @@
                                 <!-- Lock Notice jika Kuota Belum Dicek -->
                                 <div id="kelompokLockedNotice" class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-500 flex items-center gap-3">
                                     <i class="fa-solid fa-lock text-gray-400 text-base"></i>
-                                    <span>Pilih divisi dan klik <strong>"Cek Ketersediaan Kuota"</strong> di atas terlebih dahulu. Formulir anggota kelompok akan aktif setelah kuota pada periode tanggal dipastikan tersedia.</span>
+                                    <span>Pilih divisi dan tentukan tanggal magang untuk mengaktifkan formulir anggota kelompok.</span>
                                 </div>
 
                                 <!-- Form Kelompok (Tampil setelah kuota OK) -->
                                 <div id="kelompokActiveSection" class="hidden space-y-4">
                                     <!-- Banner Kapasitas Kuota Maksimal -->
-                                    <div id="kelompokCapacityBanner" class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center justify-between">
+                                    <div id="kelompokCapacityBanner" class="p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs text-teal-900 flex items-center justify-between">
                                         <div class="flex items-center gap-2">
-                                            <i class="fa-solid fa-circle-info text-blue-600"></i>
-                                            <span>Kapasitas kuota divisi yang tersedia untuk periode ini: <strong id="textKapasitasTersedia">0 Kursi</strong></span>
+                                            <i class="fa-solid fa-circle-info text-teal-600"></i>
+                                            <span>Pendaftaran Anda akan diproses dan diverifikasi oleh Admin BPS.</span>
                                         </div>
-                                        <span id="textStatusKapasitasKelompok" class="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Aman</span>
+                                        <span id="textStatusKapasitasKelompok" class="text-[10px] font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">1 Peserta</span>
                                     </div>
 
                                     <!-- Form Pencarian Anggota Tambahan -->
@@ -1613,25 +1602,32 @@
                 badge.className = 'text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200 inline-block';
             }
 
-            resetQuotaCheckedStatus();
+            updateFormState();
         }
 
-        function resetQuotaCheckedStatus() {
-            currentQuotaCheck = null;
-            const resultBox = document.getElementById('quotaCheckResult');
-            if (resultBox) {
-                resultBox.classList.add('hidden');
-                resultBox.innerHTML = '';
-            }
+        function updateFormState() {
+            const divisiId = document.getElementById('inputDivisi')?.value;
+            const tglMulai = document.getElementById('inputTglMulai')?.value;
+            const tglSelesai = document.getElementById('inputTglSelesai')?.value;
 
-            // Kunci kembali form anggota kelompok
-            document.getElementById('kelompokActiveSection')?.classList.add('hidden');
-            document.getElementById('kelompokLockedNotice')?.classList.remove('hidden');
-
-            const submitBtn = document.getElementById('btnSubmitPendaftaran');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            if (divisiId && tglMulai && tglSelesai) {
+                document.getElementById('kelompokActiveSection')?.classList.remove('hidden');
+                document.getElementById('kelompokLockedNotice')?.classList.add('hidden');
+                
+                const submitBtn = document.getElementById('btnSubmitPendaftaran');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                document.getElementById('kelompokActiveSection')?.classList.add('hidden');
+                document.getElementById('kelompokLockedNotice')?.classList.remove('hidden');
+                
+                const submitBtn = document.getElementById('btnSubmitPendaftaran');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
             }
         }
 
@@ -1770,40 +1766,12 @@
 
         // ================= VALIDASI KUOTA ANGGOTA KELOMPOK =================
         function validateKelompokQuota() {
-            const submitBtn = document.getElementById('btnSubmitPendaftaran');
-            const alertBox = document.getElementById('quotaExceededAlert');
-            const alertMsg = document.getElementById('quotaExceededMsg');
             const statusKapasitas = document.getElementById('textStatusKapasitasKelompok');
-
-            if (!currentQuotaCheck || !currentQuotaCheck.tersedia) {
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-                return;
-            }
-
-            const sisaTersedia = parseInt(currentQuotaCheck.sisa_kuota_minimal || 0);
             const totalAnggota = 1 + addedMembers.length;
-
-            if (totalAnggota > sisaTersedia) {
-                // Kuota tidak memenuhi jumlah kelompok!
-                alertBox.classList.remove('hidden');
-                alertMsg.innerHTML = `Jumlah anggota kelompok Anda saat ini <strong>${totalAnggota} orang</strong>, sedangkan kuota divisi yang tersisa pada tanggal tersebut hanya <strong>${sisaTersedia} kursi</strong>. Hapus anggota rekan tambahan atau sesuaikan tanggal magang agar kapasitas mencukupi.`;
-
-                statusKapasitas.textContent = 'Melebihi Kuota!';
-                statusKapasitas.className = 'text-[10px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full';
-
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                alertBox.classList.add('hidden');
-
-                statusKapasitas.textContent = `${totalAnggota} / ${sisaTersedia} Kursi Terpakai`;
-                statusKapasitas.className = 'text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full';
-
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            if (statusKapasitas) {
+                statusKapasitas.textContent = `${totalAnggota} Peserta`;
+                statusKapasitas.className = 'text-[10px] font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full';
             }
         }
 
@@ -1964,7 +1932,7 @@
             addedMembers = [];
             currentQuotaCheck = null;
             renderAnggotaList();
-            resetQuotaCheckedStatus();
+            updateFormState();
 
             document.querySelectorAll('.divisi-select-card').forEach(card => {
                 card.classList.remove('border-gray-900', 'bg-white', 'shadow-sm', 'ring-2', 'ring-gray-900/10');

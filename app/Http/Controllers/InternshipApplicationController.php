@@ -508,25 +508,6 @@ class InternshipApplicationController extends Controller
         try {
             $lockedDivision = Division::where('id', $division->id)->lockForUpdate()->firstOrFail();
 
-            $ketersediaan = $lockedDivision->checkAvailability(
-                $startDate,
-                $endDate,
-                $totalAnggota
-            );
-
-            if (!$ketersediaan['available']) {
-                $tglPenuhList = collect($ketersediaan['full_dates'])->pluck('tanggal')->take(5)->implode(', ');
-                DB::rollBack();
-
-                LogHelper::fail(
-                    $request,
-                    'Pengajuan Pendaftaran Gagal (Kuota Penuh)',
-                    "Kuota Divisi {$lockedDivision->name} tidak mencukupi untuk {$totalAnggota} orang pada periode {$startDate} s.d. {$endDate} (sisa kapasitas: {$ketersediaan['min_remaining_quota']}). Tanggal padat: {$tglPenuhList}."
-                );
-
-                return back()->withInput()->with('error', "Kuota Divisi {$lockedDivision->name} tidak mencukupi untuk {$totalAnggota} orang pada periode yang dipilih (sisa kapasitas: {$ketersediaan['min_remaining_quota']} kursi). Tanggal yang padat antara lain: {$tglPenuhList}. Silakan sesuaikan tanggal atau jumlah anggota.");
-            }
-
             foreach ($anggotaUserIds as $anggotaId) {
                 $memberUser = User::with(['participantProfile', 'studentProfile'])->find($anggotaId);
                 if (!$memberUser) {
