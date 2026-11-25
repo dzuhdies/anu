@@ -943,7 +943,7 @@
                                 <p class="text-xs text-gray-500 mt-0.5">Kelola divisi penempatan dan batas kapasitas kuota maksimal bersamaan per divisi</p>
                             </div>
 
-                            <button onclick="showModal('divisiAddModal')"
+                            <button onclick="openAddDivisi()"
                                 class="text-xs font-semibold bg-gray-900 text-white hover:bg-black px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm transition">
                                 <i class="fa-solid fa-plus text-[10px]"></i> Tambah Divisi Baru
                             </button>
@@ -966,8 +966,8 @@
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-1">
-                                        <button onclick="openEditDivisi('{{ route('admin.divisi.update', $div->id) }}', '{{ addslashes($div->nama_divisi) }}', '{{ addslashes($div->deskripsi ?? '') }}', {{ $div->kuota }}, {{ $div->is_active ? 'true' : 'false' }})"
-                                            class="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 text-gray-600 transition" title="Edit Divisi">
+                                        <button onclick="openEditDivisi('{{ route('admin.divisi.update', $div->id) }}', '{{ addslashes($div->nama_divisi) }}', '{{ addslashes($div->deskripsi ?? '') }}', {{ $div->kuota }}, {{ $div->is_active ? 'true' : 'false' }}, {{ json_encode($div->aktivitas_list) }})"
+                                            class="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 text-gray-600 transition" title="Edit Divisi & Aktivitas">
                                             <i class="fa-solid fa-pen text-xs"></i>
                                         </button>
                                         <form action="{{ route('admin.divisi.delete', $div->id) }}" method="POST"
@@ -982,6 +982,23 @@
                                 </div>
 
                                 <p class="text-xs text-gray-500 leading-relaxed">{{ $div->deskripsi ?: 'Tidak ada deskripsi rincian tugas.' }}</p>
+
+                                <!-- Daftar Aktivitas Divisi (Dapat Ditambah/Kurang oleh Admin) -->
+                                <div class="pt-2 border-t border-gray-100 space-y-1.5">
+                                    <div class="flex items-center justify-between text-[11px] font-bold text-gray-700">
+                                        <span class="flex items-center gap-1.5">
+                                            <i class="fa-solid fa-list-check text-teal-600"></i>
+                                            Aktivitas / Kerjaan ({{ count($div->aktivitas_list) }} Kegiatan):
+                                        </span>
+                                    </div>
+                                    <ol class="list-decimal list-inside text-[11px] text-gray-600 space-y-1 bg-gray-50/70 p-2.5 rounded-lg border border-gray-100 max-h-36 overflow-y-auto">
+                                        @forelse($div->aktivitas_list as $act)
+                                            <li class="leading-relaxed">{{ $act }}</li>
+                                        @empty
+                                            <li class="text-gray-400 italic list-none">Belum ada aktivitas ditentukan. Klik edit untuk menambahkan.</li>
+                                        @endforelse
+                                    </ol>
+                                </div>
 
                                 <!-- Progress Kuota (Dihitung per anggota per kepala) -->
                                 @php
@@ -2106,6 +2123,24 @@
                     <label class="block text-xs font-medium text-gray-700 mb-1">Kapasitas Kuota Kursi (Bersamaan)</label>
                     <input type="number" name="kuota" value="4" min="1" max="50" required class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-gray-900">
                 </div>
+                <!-- Daftar Aktivitas Magang (Per Nomor) -->
+                <div class="space-y-2 pt-2 border-t border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-800">Daftar Aktivitas & Kerjaan Magang</label>
+                            <p class="text-[10px] text-gray-400">Atur per nomor tugas yang dijalankan siswa pada divisi ini</p>
+                        </div>
+                        <button type="button" onclick="addAktivitasRow('addDivisiAktivitasList')"
+                            class="px-2.5 py-1 rounded-md bg-teal-50 hover:bg-teal-100 text-teal-800 text-[11px] font-bold border border-teal-200 transition flex items-center gap-1 shadow-2xs">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                            <span>Tambah Nomor</span>
+                        </button>
+                    </div>
+                    <div id="addDivisiAktivitasList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Diisi via JS -->
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-2 pt-1">
                     <input type="checkbox" name="is_active" id="divisiAddActive" value="1" checked class="w-4 h-4 rounded text-gray-900">
                     <label for="divisiAddActive" class="text-xs font-medium text-gray-800">Aktifkan pendaftaran untuk divisi ini</label>
@@ -2174,6 +2209,24 @@
                     <label class="block text-xs font-medium text-gray-700 mb-1">Kapasitas Kuota Kursi</label>
                     <input type="number" name="kuota" id="editDivisiKuota" min="1" max="50" required class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-gray-900">
                 </div>
+                <!-- Daftar Aktivitas Magang (Per Nomor) -->
+                <div class="space-y-2 pt-2 border-t border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-800">Daftar Aktivitas & Kerjaan Magang</label>
+                            <p class="text-[10px] text-gray-400">Ubah per nomor atau tambah/kurang nomor aktivitas</p>
+                        </div>
+                        <button type="button" onclick="addAktivitasRow('editDivisiAktivitasList')"
+                            class="px-2.5 py-1 rounded-md bg-teal-50 hover:bg-teal-100 text-teal-800 text-[11px] font-bold border border-teal-200 transition flex items-center gap-1 shadow-2xs">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                            <span>Tambah Nomor</span>
+                        </button>
+                    </div>
+                    <div id="editDivisiAktivitasList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Diisi via JS -->
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-2 pt-1">
                     <input type="hidden" name="is_active" value="0">
                     <input type="checkbox" name="is_active" id="editDivisiIsActive" value="1" class="w-4 h-4 rounded text-gray-900">
@@ -3268,13 +3321,90 @@
             showModal('pendaftaranRejectModal');
         }
 
-        function openEditDivisi(actionUrl, nama_divisi, deskripsi, kuota, is_active) {
+        // ================= PENGELOLAAN AKTIVITAS DIVISI =================
+        function renderAktivitasList(containerId, items) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            const list = (items && items.length > 0) ? items : [''];
+            list.forEach(val => {
+                addAktivitasRow(containerId, val);
+            });
+        }
+
+        function addAktivitasRow(containerId, val = '') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const count = container.querySelectorAll('.aktivitas-row').length + 1;
+            const row = document.createElement('div');
+            row.className = 'aktivitas-row flex items-center gap-2';
+            const escapedVal = (val || '').replace(/"/g, '&quot;');
+            row.innerHTML = `
+                <span class="row-number w-5 h-5 rounded-full bg-gray-100 text-gray-700 font-bold text-[10px] flex items-center justify-center shrink-0 border border-gray-200">
+                    ${count}
+                </span>
+                <input type="text" name="aktivitas[]" value="${escapedVal}" required
+                    placeholder="Aktivitas / tugas ke-${count}..."
+                    class="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:border-gray-900 bg-white">
+                <button type="button" onclick="removeAktivitasRow(this)"
+                    class="w-7 h-7 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition shrink-0" title="Hapus nomor ini">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+            `;
+            container.appendChild(row);
+            reindexAktivitasRows(containerId);
+        }
+
+        function removeAktivitasRow(btn) {
+            const container = btn.closest('#addDivisiAktivitasList, #editDivisiAktivitasList');
+            const row = btn.closest('.aktivitas-row');
+            if (container && row) {
+                if (container.querySelectorAll('.aktivitas-row').length <= 1) {
+                    row.querySelector('input').value = '';
+                    return;
+                }
+                row.remove();
+                reindexAktivitasRows(container.id);
+            }
+        }
+
+        function reindexAktivitasRows(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.querySelectorAll('.aktivitas-row').forEach((row, idx) => {
+                const numSpan = row.querySelector('.row-number');
+                if (numSpan) numSpan.textContent = idx + 1;
+                const input = row.querySelector('input');
+                if (input && !input.value) {
+                    input.placeholder = `Aktivitas / tugas ke-${idx + 1}...`;
+                }
+            });
+        }
+
+        function openAddDivisi() {
+            renderAktivitasList('addDivisiAktivitasList', ['']);
+            showModal('divisiAddModal');
+        }
+
+        function openEditDivisi(actionUrl, nama_divisi, deskripsi, kuota, is_active, activitiesData) {
             const form = document.getElementById('formEditDivisi');
             form.action = actionUrl;
             document.getElementById('editDivisiNama').value = nama_divisi;
             document.getElementById('editDivisiDeskripsi').value = deskripsi || '';
             document.getElementById('editDivisiKuota').value = kuota;
             document.getElementById('editDivisiIsActive').checked = Boolean(is_active);
+
+            let activities = [];
+            if (Array.isArray(activitiesData)) {
+                activities = activitiesData;
+            } else if (typeof activitiesData === 'string') {
+                try {
+                    activities = JSON.parse(activitiesData);
+                } catch(e) {
+                    activities = [];
+                }
+            }
+            renderAktivitasList('editDivisiAktivitasList', activities);
             showModal('divisiEditModal');
         }
 

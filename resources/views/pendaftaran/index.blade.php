@@ -128,7 +128,7 @@
                                 class="sidebar-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition">
                                 <span class="flex items-center gap-2.5">
                                     <i class="fa-solid fa-sitemap w-4 text-center"></i>
-                                    Kuota & Divisi
+                                    Daftar Divisi
                                 </span>
                             </button>
                         </li>
@@ -453,206 +453,393 @@
                             </div>
                         @endif
 
-                        <!-- Form Pendaftaran Magang Baru -->
-                        <form method="POST" action="{{ route('pendaftaran.store') }}" id="formPendaftaran" class="space-y-6">
-                            @csrf
+                        @php
+                            $divisionTaskTemplates = [
+                                'ipds' => [
+                                    'icon' => 'fa-laptop-code',
+                                    'deskripsi' => 'Pengembangan teknologi informasi, integrasi pengolahan data sensus/survei, visualisasi dashboard analitik, dan diseminasi publikasi statistik kepada masyarakat.',
+                                    'tasks' => [
+                                        'Pengembangan dan pemeliharaan website/sistem informasi internal BPS.',
+                                        'Perancangan visualisasi data interaktif, dashboard analitik, dan infografis publikasi.',
+                                        'Pengelolaan basis data hasil survei dan integrasi data sensus statistik.',
+                                        'Pelayanan konsultasi data statistik di Pelayanan Statistik Terpadu (PST) dan Pojok Statistik.',
+                                        'Dukungan jaringan, pemeliharaan perangkat keras, dan keamanan sistem informasi kantor.'
+                                    ]
+                                ],
+                                'sosial' => [
+                                    'icon' => 'fa-users',
+                                    'deskripsi' => 'Pengumpulan, pengolahan, dan analisis statistik kependudukan, kemiskinan, ketenagakerjaan, pendidikan, dan kesejahteraan masyarakat Kota Malang.',
+                                    'tasks' => [
+                                        'Validasi, konsistensi, dan entri dokumen survei sosial ekonomi (Susenas dan Sakernas).',
+                                        'Penyusunan tabulasi data kemiskinan, ketimpangan pengeluaran (Gini Ratio), dan IPM.',
+                                        'Pengolahan indikator ketenagakerjaan, upah buruh, serta statistik gender dan pendidikan.',
+                                        'Penyusunan draft publikasi profil statistik kependudukan dan sosial Kota Malang.',
+                                        'Pemeriksaan kelengkapan berkas kuesioner pendataan lapangan.'
+                                    ]
+                                ],
+                                'produksi' => [
+                                    'icon' => 'fa-industry',
+                                    'deskripsi' => 'Pengelolaan survei dan sensus sektor riil komoditas, meliputi industri manufaktur, pertanian, tanaman pangan, peternakan, energi, dan konstruksi.',
+                                    'tasks' => [
+                                        'Pemutakhiran direktori perusahaan industri manufaktur skala besar, sedang, dan mikro/kecil.',
+                                        'Pengolahan data survei statistik pertanian tanaman pangan, hortikultura, dan peternakan.',
+                                        'Pencatatan dan verifikasi data survei perusahaan konstruksi dan bahan galian.',
+                                        'Penyusunan laporan indeks produksi industri manufaktur dan profil komoditas daerah.',
+                                        'Rekapitulasi dan pelaporan berkas bulanan data produksi unggulan daerah.'
+                                    ]
+                                ],
+                                'distribusi' => [
+                                    'icon' => 'fa-truck-fast',
+                                    'deskripsi' => 'Pemantauan indikator peredaran barang/jasa, harga konsumen (inflasi), pariwisata, perhotelan, perdagangan, dan transportasi di Kota Malang.',
+                                    'tasks' => [
+                                        'Pencatatan dan pengolahan Survei Harga Konsumen (SHK) untuk perhitungan inflasi Kota Malang.',
+                                        'Pendataan statistik pariwisata dan Tingkat Penghunian Kamar (TPK) hotel.',
+                                        'Verifikasi data survei perdagangan besar, eceran, logistik, dan jasa transportasi.',
+                                        'Penyusunan materi rilis Berita Resmi Statistik (BRS) inflasi dan pariwisata.',
+                                        'Analisis pergerakan harga komoditas strategis di pasar rakyat dan pasar modern.'
+                                    ]
+                                ],
+                                'nerwilis' => [
+                                    'icon' => 'fa-chart-pie',
+                                    'deskripsi' => 'Penyusunan indikator makroekonomi regional, Produk Domestik Regional Bruto (PDRB), tabel Input-Output, dan analisis neraca pembangunan ekonomi.',
+                                    'tasks' => [
+                                        'Penyusunan dan penghitungan PDRB Kota Malang menurut lapangan usaha dan pengeluaran.',
+                                        'Analisis pertumbuhan ekonomi, struktur ekonomi daerah, dan PDRB per kapita.',
+                                        'Kompilasi dan rekonsiliasi data sekunder dari dinas dan instansi terkait.',
+                                        'Penyusunan draft publikasi Analisis Indikator Makroekonomi Kota Malang.',
+                                        'Pembuatan model analisis keterkaitan antar sektor ekonomi daerah.'
+                                    ]
+                                ],
+                                'umum' => [
+                                    'icon' => 'fa-building-columns',
+                                    'deskripsi' => 'Manajemen perkantoran BPS, tata naskah persuratan dinas, administrasi kepegawaian aparatur, Barang Milik Negara (BMN), dan operasional kantor.',
+                                    'tasks' => [
+                                        'Tata kelola administrasi persuratan dinas, registrasi naskah masuk/keluar, dan arsip digital.',
+                                        'Dukungan administrasi kepegawaian dan absensi/presensi aparatur BPS.',
+                                        'Inventarisasi dan pengelolaan aset Barang Milik Negara (BMN).',
+                                        'Keprotokolan rapat/acara resmi, dokumentasi kegiatan, dan kehumasan kantor.',
+                                        'Penyusunan kelengkapan administrasi keuangan dan SPJ kegiatan dinas.'
+                                    ]
+                                ],
+                            ];
 
-                            <div class="card p-5 bg-white space-y-4">
+                            $divisiDataMap = [];
+                            foreach($divisis as $div) {
+                                $lowerName = strtolower($div->nama_divisi);
+                                $matchedKey = null;
+                                if (str_contains($lowerName, 'ipds') || str_contains($lowerName, 'integrasi')) {
+                                    $matchedKey = 'ipds';
+                                } elseif (str_contains($lowerName, 'sosial')) {
+                                    $matchedKey = 'sosial';
+                                } elseif (str_contains($lowerName, 'produksi')) {
+                                    $matchedKey = 'produksi';
+                                } elseif (str_contains($lowerName, 'distribusi')) {
+                                    $matchedKey = 'distribusi';
+                                } elseif (str_contains($lowerName, 'nerwilis') || str_contains($lowerName, 'neraca')) {
+                                    $matchedKey = 'nerwilis';
+                                } elseif (str_contains($lowerName, 'umum') || str_contains($lowerName, 'tata usaha') || str_contains($lowerName, 'tu')) {
+                                    $matchedKey = 'umum';
+                                }
+
+                                $template = $matchedKey ? $divisionTaskTemplates[$matchedKey] : [
+                                    'icon' => 'fa-sitemap',
+                                    'deskripsi' => 'Pelayanan dan pengelolaan teknis operasional Badan Pusat Statistik Kota Malang.',
+                                    'tasks' => [
+                                        'Pendataan dan verifikasi dokumen teknis operasional statistik.',
+                                        'Pengolahan dan entri data menggunakan sistem aplikasi BPS.',
+                                        'Penyusunan tabulasi berkas dan rekapitulasi data kegiatan.',
+                                        'Dukungan administrasi dan laporan progres kerja harian.'
+                                    ]
+                                ];
+
+                                $deskripsiTampil = !empty(trim($div->deskripsi ?? '')) ? $div->deskripsi : $template['deskripsi'];
+
+                                $divisiDataMap[$div->id] = [
+                                    'id' => $div->id,
+                                    'nama' => $div->nama_divisi,
+                                    'deskripsi' => $deskripsiTampil,
+                                    'icon' => $template['icon'],
+                                    'tasks' => $div->aktivitas_list,
+                                ];
+                            }
+                        @endphp
+
+                        <!-- LANGKAH 1: List Divisi (Hanya Nama & Deskripsi) -->
+                        <div id="stepPilihDivisi" class="space-y-4">
+                            <div class="p-5 space-y-4">
                                 <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                                     <div class="flex items-center gap-2.5">
-                                        <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-xs">
-                                            <i class="fa-solid fa-sitemap"></i>
-                                        </div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-gray-900">1. Pilih Divisi Tujuan Magang</h4>
-                                            <p class="text-[11px] text-gray-400">Pilih divisi yang diminati. Kapasitas kuota kursi ditampilkan pada setiap divisi.</p>
+                                            <h4 class="text-xs font-bold text-gray-900">Pilih Divisi Magang</h4>
+                                            <p class="text-[11px] text-gray-400">Silakan klik divisi yang Anda minati untuk melihat deskripsi dan rincian kerjaan yang dilakukan.</p>
                                         </div>
                                     </div>
-                                    <span id="selectedDivisiBadge" class="text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200 hidden sm:inline-block">
-                                        Pilih salah satu divisi di bawah
-                                    </span>
                                 </div>
 
-                                <input type="hidden" name="divisi_id" id="inputDivisi" value="{{ old('divisi_id') }}" required>
-
-                                <!-- Grid Kartu Divisi Interaktif -->
+                                <!-- Grid Kartu Divisi (Hanya Nama & Deskripsi) -->
                                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                     @foreach($divisis as $div)
-                                        <div onclick="selectDivisiCard({{ $div->id }}, '{{ addslashes($div->nama_divisi) }}', {{ $div->sisa_kuota }}, {{ $div->kuota }})"
+                                        @php
+                                            $dInfo = $divisiDataMap[$div->id] ?? null;
+                                        @endphp
+                                        <div onclick="openDetailDivisi({{ $div->id }})"
                                             id="divisiCard-{{ $div->id }}"
-                                            class="divisi-select-card p-3.5 rounded-xl border border-gray-200 bg-[#fafafa] hover:border-gray-900 hover:bg-white transition cursor-pointer flex flex-col justify-between gap-2.5 group">
-                                            
-                                            <!-- Sisa Kuota di Atas Nama Divisi -->
-                                            <div class="flex items-center justify-between">
-                                                @if($div->sisa_kuota > 0)
-                                                    <span class="text-[11px] font-bold text-emerald-600">
-                                                        Kapasitas {{ $div->sisa_kuota }} Orang
-                                                    </span>
-                                                @else
-                                                    <span class="text-[11px] font-bold text-rose-600">
-                                                        Penuh (0 Kursi)
-                                                    </span>
-                                                @endif
-                                                <i class="fa-solid fa-circle-check text-gray-300 text-sm divisi-check-icon"></i>
-                                            </div>
-
-                                            <!-- Nama & Deskripsi Divisi -->
+                                            class="p-4 rounded-xl border border-gray-200 bg-[#fafafa] hover:border-gray-900 hover:bg-white hover:shadow-sm transition cursor-pointer flex flex-col justify-between gap-3 group">
                                             <div>
-                                                <h5 class="text-xs font-bold text-gray-900 group-hover:text-black transition flex items-center gap-1.5">
+                                                <div class="flex items-center justify-between gap-2 mb-2.5">
+                                                    <span class="w-7 h-7 rounded-lg bg-white border border-gray-200 group-hover:border-gray-900 text-gray-700 group-hover:text-black flex items-center justify-center text-xs transition">
+                                                        <i class="fa-solid {{ $dInfo['icon'] ?? 'fa-sitemap' }}"></i>
+                                                    </span>
+                                                    <span class="text-[10px] font-semibold text-gray-400 group-hover:text-teal-700 transition flex items-center gap-1">
+                                                        <span>Lihat Rincian</span>
+                                                        <i class="fa-solid fa-arrow-right text-[9px] group-hover:translate-x-0.5 transition-transform"></i>
+                                                    </span>
+                                                </div>
+                                                <h5 class="text-xs font-bold text-gray-900 group-hover:text-black transition">
                                                     {{ $div->nama_divisi }}
                                                 </h5>
-                                                <p class="text-[11px] text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-                                                    {{ $div->deskripsi ?: 'Pelayanan dan teknis operasional Badan Pusat Statistik.' }}
+                                                <p class="text-[11px] text-gray-500 mt-1 line-clamp-3 leading-relaxed">
+                                                    {{ $dInfo['deskripsi'] ?? 'Pelayanan dan teknis operasional Badan Pusat Statistik.' }}
                                                 </p>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- 3. Periode Magang & Pengecekan Kuota -->
-                            <div class="card p-5 bg-white space-y-4">
-                                <div class="flex items-center gap-2.5 pb-3 border-b border-gray-100">
-                                    <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
-                                        <i class="fa-solid fa-calendar-days"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-xs font-bold text-gray-900">2. Tentukan Periode Magang & Cek Ketersediaan Kuota</h4>
-                                        <p class="text-[11px] text-gray-400">Pilih rentang tanggal, lalu klik tombol cek untuk memastikan kuota divisi tersedia</p>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-                                    <div>
-                                        <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                            Tanggal Mulai <span class="text-rose-500">*</span>
-                                        </label>
-                                        <input type="date" name="tanggal_mulai" id="inputTglMulai" required
-                                            min="{{ date('Y-m-d') }}" value="{{ old('tanggal_mulai') }}" onchange="updateFormState()"
-                                            class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white">
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                            Tanggal Selesai <span class="text-rose-500">*</span>
-                                        </label>
-                                        <input type="date" name="tanggal_selesai" id="inputTglSelesai" required
-                                            min="{{ date('Y-m-d') }}" value="{{ old('tanggal_selesai') }}" onchange="updateFormState()"
-                                            class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white">
-                                    </div>
-                                </div>
-
-
+                        <!-- LANGKAH 2: Halaman Rincian Divisi (Deskripsi & Kerjaan) -->
+                        <div id="stepDetailDivisi" class="hidden space-y-4">
+                            <div class="flex items-center justify-between">
+                                <button type="button" onclick="backToPilihDivisi()"
+                                    class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:text-black hover:bg-gray-50 text-xs font-medium transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                                    <span>Kembali ke Daftar Divisi</span>
+                                </button>
+                                <span class="text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                                    Langkah 2: Informasi Divisi
+                                </span>
                             </div>
 
-                            <!-- 4. Anggota Kelompok Tambahan (Aktif Setelah Kuota Tanggal Tersedia) -->
-                            <div id="stepKelompokContainer" class="card p-5 bg-white space-y-4">
-                                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-xs">
-                                            <i class="fa-solid fa-users"></i>
+                            <div class="card p-6 bg-white space-y-5">
+                                <!-- Header Divisi -->
+                                <div class="flex items-start gap-4 pb-4 border-b border-gray-100">
+                                    <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-700 border border-teal-100 flex items-center justify-center font-bold text-lg shrink-0">
+                                        <i id="detailDivisiIcon" class="fa-solid fa-sitemap"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 id="detailDivisiNama" class="text-sm md:text-base font-bold text-gray-900">Nama Divisi</h3>
+                                        <p id="detailDivisiDeskripsi" class="text-xs text-gray-600 mt-1 leading-relaxed">
+                                            <!-- Deskripsi via JS -->
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Kerjaan yang Dilakukan -->
+                                <div class="space-y-2.5">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs">
+                                            <i class="fa-solid fa-briefcase"></i>
+                                        </div>
+                                        <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                                            Kerjaan & Aktivitas yang Dilakukan
+                                        </h4>
+                                    </div>
+                                    <div class="bg-gray-50/80 rounded-xl p-4 border border-gray-100">
+                                        <ul id="detailDivisiTasksList" class="space-y-2">
+                                            <!-- Task items via JS -->
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- Tombol Aksi di Bagian Bawah -->
+                                <div class="pt-4 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+                                    <button type="button" onclick="backToPilihDivisi()"
+                                        class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-semibold transition">
+                                        Pilih Divisi Lain
+                                    </button>
+                                    <button type="button" onclick="proceedToFormulir()"
+                                        class="px-5 py-2.5 rounded-xl bg-gray-900 hover:bg-black text-white text-xs font-bold transition flex items-center gap-2 shadow-xs">
+                                        <span>Daftar Divisi Ini</span>
+                                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LANGKAH 3: Formulir Isi Tanggal & Kelompok / Individu -->
+                        <div id="stepFormulir" class="hidden space-y-5">
+                            <div class="flex items-center justify-between">
+                                <button type="button" onclick="backToDetailDivisi()"
+                                    class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:text-black hover:bg-gray-50 text-xs font-medium transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                                    <span>Kembali ke Detail Divisi</span>
+                                </button>
+                                <span class="text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                                    Langkah 3: Lengkapi Formulir
+                                </span>
+                            </div>
+
+                            <form method="POST" action="{{ route('pendaftaran.store') }}" id="formPendaftaran" class="space-y-6">
+                                @csrf
+
+                                <input type="hidden" name="divisi_id" id="inputDivisi" value="{{ old('divisi_id') }}" required>
+
+                                <!-- Kartu Rangkuman Divisi Terpilih -->
+                                <div class="card p-4 bg-teal-50/70 border border-teal-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
+                                            <i id="formSelectedDivisiIcon" class="fa-solid fa-sitemap"></i>
                                         </div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-gray-900">3. Anggota Kelompok Tambahan (Opsional)</h4>
-                                            <p class="text-[11px] text-gray-400">Kosongkan jika mendaftar mandiri (1 orang). Tambahkan rekan untuk mendaftar 1 kelompok.</p>
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-teal-800">Divisi Tujuan Magang:</span>
+                                            <h4 id="formSelectedDivisiNama" class="text-sm font-bold text-teal-950">Nama Divisi</h4>
+                                            <p id="formSelectedDivisiDesc" class="text-[11px] text-teal-700 mt-0.5 line-clamp-1 leading-relaxed">Deskripsi divisi</p>
                                         </div>
                                     </div>
-                                    <span id="badgeTotalPeserta" class="px-2.5 py-1 bg-gray-100 text-gray-800 text-[11px] font-bold rounded-lg border border-gray-200">
-                                        1 Peserta (Mandiri)
-                                    </span>
+                                    <button type="button" onclick="backToPilihDivisi()" class="px-3 py-1.5 rounded-lg border border-teal-300 bg-white text-teal-800 hover:bg-teal-50 font-semibold text-xs transition flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-2xs">
+                                        <i class="fa-solid fa-arrows-rotate text-[11px]"></i>
+                                        <span>Ganti Divisi</span>
+                                    </button>
                                 </div>
 
-                                <!-- Lock Notice jika Kuota Belum Dicek -->
-                                <div id="kelompokLockedNotice" class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-500 flex items-center gap-3">
-                                    <i class="fa-solid fa-lock text-gray-400 text-base"></i>
-                                    <span>Pilih divisi dan tentukan tanggal magang untuk mengaktifkan formulir anggota kelompok.</span>
-                                </div>
-
-                                <!-- Form Kelompok (Tampil setelah kuota OK) -->
-                                <div id="kelompokActiveSection" class="hidden space-y-4">
-                                    <!-- Banner Kapasitas Kuota Maksimal -->
-                                    <div id="kelompokCapacityBanner" class="p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs text-teal-900 flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <i class="fa-solid fa-circle-info text-teal-600"></i>
-                                            <span>Pendaftaran Anda akan diproses dan diverifikasi oleh Admin BPS.</span>
+                                <!-- Periode Magang & Pengecekan Kuota -->
+                                <div class="card p-5 bg-white space-y-4">
+                                    <div class="flex items-center gap-2.5 pb-3 border-b border-gray-100">
+                                        <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                                            <i class="fa-solid fa-calendar-days"></i>
                                         </div>
-                                        <span id="textStatusKapasitasKelompok" class="text-[10px] font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">1 Peserta</span>
+                                        <div>
+                                            <h4 class="text-xs font-bold text-gray-900">Tentukan Periode Magang</h4>
+                                            <p class="text-[11px] text-gray-400">Pilih rentang tanggal mulai dan tanggal selesai magang</p>
+                                        </div>
                                     </div>
 
-                                    <!-- Form Pencarian Anggota Tambahan -->
-                                    <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-100 space-y-3">
-                                        <label class="block text-xs font-semibold text-gray-700">
-                                            Cari Akun Rekan Kelompok (Username atau Email)
-                                        </label>
-                                        <div class="flex gap-2">
-                                            <div class="relative flex-1">
-                                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                                                <input type="text" id="searchAnggotaInput" placeholder="Masukkan username atau email rekan..."
-                                                    class="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white"
-                                                    onkeydown="if(event.key === 'Enter'){ event.preventDefault(); searchAnggota(); }">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                                Tanggal Mulai <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input type="date" name="tanggal_mulai" id="inputTglMulai" required
+                                                min="{{ date('Y-m-d') }}" value="{{ old('tanggal_mulai') }}" onchange="updateFormState()"
+                                                class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white">
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                                Tanggal Selesai <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input type="date" name="tanggal_selesai" id="inputTglSelesai" required
+                                                min="{{ date('Y-m-d') }}" value="{{ old('tanggal_selesai') }}" onchange="updateFormState()"
+                                                class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Anggota Kelompok Tambahan (Opsional) -->
+                                <div id="stepKelompokContainer" class="card p-5 bg-white space-y-4">
+                                    <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-xs">
+                                                <i class="fa-solid fa-users"></i>
                                             </div>
-                                            <button type="button" onclick="searchAnggota()" id="btnSearchAnggota"
-                                                class="px-4 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-black transition flex items-center gap-1.5 shrink-0">
-                                                <i class="fa-solid fa-user-plus text-xs"></i>
-                                                <span>Cari & Tambahkan</span>
-                                            </button>
-                                        </div>
-                                        <p class="text-[10px] text-gray-400">
-                                            * Rekan harus sudah membuat akun di sistem dan telah melengkapi profil biodatanya.
-                                        </p>
-
-                                        <!-- Hasil Pencarian Anggota Rekan -->
-                                        <div id="searchResultBox" class="hidden p-3 bg-white rounded-lg border border-gray-200">
-                                            <!-- Diisi via JS -->
-                                        </div>
-                                    </div>
-
-                                    <!-- Input Nama Kelompok (Muncul jika ada anggota tambahan) -->
-                                    <div id="groupNameContainer" class="hidden space-y-1.5 pt-1">
-                                        <label class="block text-xs font-semibold text-gray-700">
-                                            Nama Kelompok (Opsional)
-                                        </label>
-                                        <input type="text" name="nama_kelompok" id="inputNamaKelompok" placeholder="Contoh: Tim Statistika Kampus BPS"
-                                            class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white">
-                                    </div>
-
-                                    <!-- Daftar Anggota Tambahan yang Ditambahkan -->
-                                    <div class="space-y-2">
-                                        <h5 class="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                            Daftar Rekan Kelompok Yang Ditambahkan:
-                                        </h5>
-                                        <div id="anggotaListContainer" class="space-y-2">
-                                            <div id="emptyAnggotaNotice" class="text-xs text-gray-400 italic py-2">
-                                                Belum ada anggota tambahan yang dipilih. Pendaftaran ini berstatus perorangan (1 orang).
+                                            <div>
+                                                <h4 class="text-xs font-bold text-gray-900">Pilih Tipe Pendaftaran & Anggota (Opsional)</h4>
+                                                <p class="text-[11px] text-gray-400">Kosongkan jika mendaftar mandiri (1 orang). Tambahkan rekan untuk mendaftar 1 kelompok.</p>
                                             </div>
                                         </div>
+                                        <span id="badgeTotalPeserta" class="px-2.5 py-1 bg-gray-100 text-gray-800 text-[11px] font-bold rounded-lg border border-gray-200">
+                                            1 Peserta (Mandiri)
+                                        </span>
                                     </div>
 
-                                    <!-- Alert Melebihi Kuota (Jika jumlah kelompok melebihi kapasitas) -->
-                                    <div id="quotaExceededAlert" class="hidden p-3.5 bg-rose-50 border border-rose-300 rounded-xl text-xs text-rose-800 space-y-1">
-                                        <div class="flex items-center gap-2 font-bold text-rose-700">
-                                            <i class="fa-solid fa-triangle-exclamation text-base"></i>
-                                            <span>Kapasitas Kelompok Melebihi Sisa Kuota!</span>
+                                    <!-- Lock Notice jika Kuota/Tanggal Belum Diisi -->
+                                    <div id="kelompokLockedNotice" class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-500 flex items-center gap-3">
+                                        <i class="fa-solid fa-lock text-gray-400 text-base"></i>
+                                        <span>Tentukan rentang tanggal magang untuk mengaktifkan opsi kelompok dan pengiriman formulir.</span>
+                                    </div>
+
+                                    <!-- Form Kelompok (Tampil setelah tanggal terisi) -->
+                                    <div id="kelompokActiveSection" class="hidden space-y-4">
+                                        <!-- Banner Informasi Verifikasi -->
+                                        <div id="kelompokCapacityBanner" class="p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs text-teal-900 flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa-solid fa-circle-info text-teal-600"></i>
+                                                <span>Pendaftaran Anda akan diproses dan diverifikasi oleh Tim BPS.</span>
+                                            </div>
+                                            <span id="textStatusKapasitasKelompok" class="text-[10px] font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">1 Peserta</span>
                                         </div>
-                                        <p id="quotaExceededMsg" class="leading-relaxed">
-                                            Jumlah kelompok Anda melebihi kapasitas sisa kuota yang tersedia. Pendaftaran tidak dapat diproses.
-                                        </p>
+
+                                        <!-- Form Pencarian Anggota Tambahan -->
+                                        <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-100 space-y-3">
+                                            <label class="block text-xs font-semibold text-gray-700">
+                                                Cari Akun Rekan Kelompok (Username atau Email)
+                                            </label>
+                                            <div class="flex gap-2">
+                                                <div class="relative flex-1">
+                                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                                                    <input type="text" id="searchAnggotaInput" placeholder="Masukkan username atau email rekan..."
+                                                        class="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white"
+                                                        onkeydown="if(event.key === 'Enter'){ event.preventDefault(); searchAnggota(); }">
+                                                </div>
+                                                <button type="button" onclick="searchAnggota()" id="btnSearchAnggota"
+                                                    class="px-4 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-black transition flex items-center gap-1.5 shrink-0">
+                                                    <i class="fa-solid fa-user-plus text-xs"></i>
+                                                    <span>Cari & Tambahkan</span>
+                                                </button>
+                                            </div>
+                                            <p class="text-[10px] text-gray-400">
+                                                * Rekan harus sudah membuat akun di sistem dan telah melengkapi profil biodatanya.
+                                            </p>
+
+                                            <!-- Hasil Pencarian Anggota Rekan -->
+                                            <div id="searchResultBox" class="hidden p-3 bg-white rounded-lg border border-gray-200">
+                                                <!-- Diisi via JS -->
+                                            </div>
+                                        </div>
+
+                                        <!-- Input Nama Kelompok (Muncul jika ada anggota tambahan) -->
+                                        <div id="groupNameContainer" class="hidden space-y-1.5 pt-1">
+                                            <label class="block text-xs font-semibold text-gray-700">
+                                                Nama Kelompok (Opsional)
+                                            </label>
+                                            <input type="text" name="nama_kelompok" id="inputNamaKelompok" placeholder="Contoh: Tim Statistika Kampus BPS"
+                                                class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-900 transition bg-white">
+                                        </div>
+
+                                        <!-- Daftar Anggota Tambahan yang Ditambahkan -->
+                                        <div class="space-y-2">
+                                            <h5 class="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                                Daftar Rekan Kelompok Yang Ditambahkan:
+                                            </h5>
+                                            <div id="anggotaListContainer" class="space-y-2">
+                                                <div id="emptyAnggotaNotice" class="text-xs text-gray-400 italic py-2">
+                                                    Belum ada anggota tambahan yang dipilih. Pendaftaran ini berstatus perorangan (1 orang).
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- 5. Tombol Submit Permohonan -->
-                            <div class="flex items-center justify-end gap-3 pt-2">
-                                <button type="reset" onclick="resetFormPendaftaranFull()" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition">
-                                    Reset
-                                </button>
-                                <button type="submit" id="btnSubmitPendaftaran" disabled
-                                    class="px-5 py-2.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-black transition flex items-center gap-2 shadow-xs opacity-50 cursor-not-allowed">
-                                    <i class="fa-solid fa-paper-plane"></i>
-                                    <span>Kirimkan Permohonan Magang</span>
-                                </button>
-                            </div>
-                        </form>
+                                <!-- Tombol Submit Permohonan -->
+                                <div class="flex items-center justify-between gap-3 pt-2">
+                                    <button type="button" onclick="backToDetailDivisi()" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-arrow-left text-xs"></i>
+                                        <span>Kembali</span>
+                                    </button>
+                                    <div class="flex items-center gap-2.5">
+                                        <button type="reset" onclick="resetFormPendaftaranFull()" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition">
+                                            Reset
+                                        </button>
+                                        <button type="submit" id="btnSubmitPendaftaran" disabled
+                                            class="px-5 py-2.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-black transition flex items-center gap-2 shadow-xs opacity-50 cursor-not-allowed">
+                                            <i class="fa-solid fa-paper-plane"></i>
+                                            <span>Kirimkan Permohonan Magang</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     @endif
 
                 </div>
@@ -1214,34 +1401,24 @@
                     </div>
                 </div>
 
-                <!-- ================= TAB 4: KUOTA DIVISI ================= -->
+                <!-- ================= TAB 4: DAFTAR DIVISI ================= -->
                 <div id="tabContent-divisi" class="tab-pane hidden max-w-4xl mx-auto space-y-5 pb-12 md:pb-0">
                     <div class="card p-5 bg-white">
                         <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                             <div>
-                                <h3 class="text-sm font-bold text-gray-900">Daftar Divisi & Kapasitas Kuota Magang</h3>
-                                <p class="text-xs text-gray-400">Informasi kapasitas tempat magang per divisi di Badan Pusat Statistik</p>
+                                <h3 class="text-sm font-bold text-gray-900">Daftar Divisi Penempatan Magang</h3>
+                                <p class="text-xs text-gray-400">Informasi divisi dan bidang kegiatan di Badan Pusat Statistik Kota Malang</p>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             @foreach($divisis as $div)
-                                <div class="p-4 rounded-xl border border-gray-100 bg-[#fbfcfd] space-y-2 hover:border-gray-200 transition">
-                                    <!-- Sisa Kuota (Berada di Atas Nama Divisi) -->
-                                    <div>
-                                        @if($div->sisa_kuota > 0)
-                                            <span class="text-[11px] font-bold text-emerald-600">
-                                                Kapasitas {{ $div->sisa_kuota }} Orang
-                                            </span>
-                                        @else
-                                            <span class="text-[11px] font-bold text-rose-600">
-                                                Kapasitas Penuh (0 Tersisa)
-                                            </span>
-                                        @endif
-                                    </div>
-
+                                <div class="p-4 rounded-xl border border-gray-100 bg-[#fbfcfd] space-y-3 hover:border-gray-200 transition">
                                     <!-- Nama Divisi -->
                                     <div class="flex items-center gap-2 pt-0.5">
+                                        <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                            <i class="fa-solid fa-sitemap"></i>
+                                        </div>
                                         <h4 class="font-bold text-gray-900 text-xs">{{ $div->nama_divisi }}</h4>
                                     </div>
 
@@ -1249,6 +1426,19 @@
                                     <p class="text-xs text-gray-500 leading-relaxed">
                                         {{ $div->deskripsi ?: 'Divisi operasional dan teknis Badan Pusat Statistik.' }}
                                     </p>
+
+                                    <!-- Kerjaan & Aktivitas -->
+                                    <div class="pt-2 border-t border-gray-100 space-y-1">
+                                        <span class="text-[10px] font-bold text-gray-700 uppercase tracking-wider block">Kerjaan & Aktivitas:</span>
+                                        <ul class="space-y-1">
+                                            @foreach($div->aktivitas_list as $act)
+                                                <li class="text-[11px] text-gray-600 flex items-start gap-1.5 leading-relaxed">
+                                                    <i class="fa-solid fa-circle-check text-teal-600 text-[10px] mt-0.5 shrink-0"></i>
+                                                    <span>{{ $act }}</span>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -1605,12 +1795,12 @@
                 <span class="text-[9px] font-semibold">Profil</span>
             </button>
 
-            <!-- TAB 4: KUOTA & DIVISI -->
+            <!-- TAB 4: DAFTAR DIVISI -->
             <button type="button" onclick="switchTab('divisi')" id="bottom-nav-divisi"
                 class="transition-all active:scale-90 text-gray-400 hover:text-gray-600 flex flex-col items-center justify-center gap-0.5"
-                title="Kuota & Divisi">
+                title="Daftar Divisi">
                 <i class="fa-solid fa-sitemap text-base"></i>
-                <span class="text-[9px] font-semibold">Kuota</span>
+                <span class="text-[9px] font-semibold">Divisi</span>
             </button>
 
             <!-- TAB 5: HISTORY -->
@@ -1636,17 +1826,6 @@
 
         // State Hasil Pengecekan Kuota
         let currentQuotaCheck = null;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            switchTab(currentTab);
-
-            // Jika ada old input divisi_id (misal kembali karena validasi)
-            const oldDivisi = document.getElementById('inputDivisi')?.value;
-            if (oldDivisi) {
-                const card = document.getElementById(`divisiCard-${oldDivisi}`);
-                if (card) card.click();
-            }
-        });
 
         function toggleMobileSidebar() {
             // Sidebar mobile telah ditiadakan dan diganti dengan Floating Bottom Navigation Bar
@@ -1692,10 +1871,10 @@
 
             // Update Breadcrumb Text
             const breadcrumbMap = {
-                'pendaftaran': 'Formulir Magang & Kuota Divisi',
+                'pendaftaran': 'Formulir Magang & Pilihan Divisi',
                 'status': 'Status Pengajuan Magang',
                 'profile': 'Profil Biodata Saya',
-                'divisi': 'Kapasitas Kuota Divisi',
+                'divisi': 'Daftar Divisi Penempatan Magang',
                 'history': 'Riwayat Magang di BPS Kota Malang'
             };
             const breadcrumbEl = document.getElementById('breadcrumbCurrent');
@@ -1726,39 +1905,114 @@
             }
         }
 
-        // ================= SELEKSI DIVISI & KUOTA =================
-        function selectDivisiCard(id, nama, sisa, kuota) {
-            const input = document.getElementById('inputDivisi');
-            if (input) input.value = id;
+        // ================= NAVIGASI LANGKAH PENDAFTARAN =================
+        const divisiDataMap = @json($divisiDataMap ?? []);
+        let currentSelectedDivisiId = null;
 
-            // Highlight kartu yang dipilih
-            document.querySelectorAll('.divisi-select-card').forEach(card => {
-                card.classList.remove('border-gray-900', 'bg-white', 'shadow-sm', 'ring-2', 'ring-gray-900/10');
-                card.classList.add('border-gray-200', 'bg-[#fafafa]');
-                const icon = card.querySelector('.divisi-check-icon');
-                if (icon) {
-                    icon.className = 'fa-solid fa-circle-check text-gray-300 text-sm divisi-check-icon';
-                }
-            });
+        document.addEventListener('DOMContentLoaded', () => {
+            switchTab(currentTab);
 
-            const activeCard = document.getElementById(`divisiCard-${id}`);
-            if (activeCard) {
-                activeCard.classList.remove('border-gray-200', 'bg-[#fafafa]');
-                activeCard.classList.add('border-gray-900', 'bg-white', 'shadow-sm', 'ring-2', 'ring-gray-900/10');
-                const icon = activeCard.querySelector('.divisi-check-icon');
-                if (icon) {
-                    icon.className = 'fa-solid fa-circle-check text-teal-600 text-sm divisi-check-icon';
+            // Jika ada old input divisi_id (misal kembali karena validasi error)
+            const oldDivisi = document.getElementById('inputDivisi')?.value;
+            if (oldDivisi && divisiDataMap[oldDivisi]) {
+                proceedToFormulir(oldDivisi);
+            }
+        });
+
+        function openDetailDivisi(id) {
+            const data = divisiDataMap[id];
+            if (!data) return;
+            currentSelectedDivisiId = id;
+
+            // Update isi Step 2
+            const iconEl = document.getElementById('detailDivisiIcon');
+            if (iconEl) iconEl.className = 'fa-solid ' + (data.icon || 'fa-sitemap');
+
+            const namaEl = document.getElementById('detailDivisiNama');
+            if (namaEl) namaEl.textContent = data.nama;
+
+            const deskripsiEl = document.getElementById('detailDivisiDeskripsi');
+            if (deskripsiEl) deskripsiEl.textContent = data.deskripsi;
+
+            const tasksListEl = document.getElementById('detailDivisiTasksList');
+            if (tasksListEl) {
+                tasksListEl.innerHTML = '';
+                (data.tasks || []).forEach(task => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start gap-2.5 text-xs text-gray-700 leading-relaxed';
+                    li.innerHTML = '<i class="fa-solid fa-circle-check text-teal-600 text-xs mt-0.5 shrink-0"></i> <span>' + task + '</span>';
+                    tasksListEl.appendChild(li);
+                });
+            }
+
+            // Tampilkan Step 2, sembunyikan Step 1 dan Step 3
+            document.getElementById('stepPilihDivisi')?.classList.add('hidden');
+            document.getElementById('stepDetailDivisi')?.classList.remove('hidden');
+            document.getElementById('stepFormulir')?.classList.add('hidden');
+
+            const container = document.querySelector('.custom-scrollbar.overflow-y-auto') || window;
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToPilihDivisi() {
+            document.getElementById('stepPilihDivisi')?.classList.remove('hidden');
+            document.getElementById('stepDetailDivisi')?.classList.add('hidden');
+            document.getElementById('stepFormulir')?.classList.add('hidden');
+
+            const container = document.querySelector('.custom-scrollbar.overflow-y-auto') || window;
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToDetailDivisi() {
+            if (currentSelectedDivisiId) {
+                openDetailDivisi(currentSelectedDivisiId);
+            } else {
+                backToPilihDivisi();
+            }
+        }
+
+        function proceedToFormulir(id) {
+            const targetId = id || currentSelectedDivisiId;
+            if (!targetId) {
+                backToPilihDivisi();
+                return;
+            }
+            currentSelectedDivisiId = targetId;
+
+            const inputDiv = document.getElementById('inputDivisi');
+            if (inputDiv) inputDiv.value = targetId;
+
+            const data = divisiDataMap[targetId];
+            if (data) {
+                const iconEl = document.getElementById('formSelectedDivisiIcon');
+                if (iconEl) iconEl.className = 'fa-solid ' + (data.icon || 'fa-sitemap');
+
+                const namaEl = document.getElementById('formSelectedDivisiNama');
+                if (namaEl) namaEl.textContent = data.nama;
+
+                const descEl = document.getElementById('formSelectedDivisiDesc');
+                if (descEl) {
+                    descEl.textContent = data.deskripsi || 'Divisi penempatan magang BPS Kota Malang';
                 }
             }
 
-            const badge = document.getElementById('selectedDivisiBadge');
-            if (badge) {
-                badge.textContent = `Divisi Terpilih: ${nama}`;
-                badge.className = 'text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200 inline-block';
-            }
+            // Tampilkan Step 3, sembunyikan Step 1 dan Step 2
+            document.getElementById('stepPilihDivisi')?.classList.add('hidden');
+            document.getElementById('stepDetailDivisi')?.classList.add('hidden');
+            document.getElementById('stepFormulir')?.classList.remove('hidden');
 
             updateFormState();
-            resetQuotaCheckedStatus();
+
+            const container = document.querySelector('.custom-scrollbar.overflow-y-auto') || window;
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function selectDivisiCard(id, nama, sisa, kuota) {
+            openDetailDivisi(id);
+        }
+
+        function resetQuotaCheckedStatus() {
+            currentQuotaCheck = null;
         }
 
         function updateFormState() {
@@ -1785,139 +2039,6 @@
                     submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 }
             }
-        }
-
-        // ================= PENGECEKAN KUOTA & BULANAN =================
-        function performQuotaCheck() {
-            const divisiId = document.getElementById('inputDivisi').value;
-            const tglMulai = document.getElementById('inputTglMulai').value;
-            const tglSelesai = document.getElementById('inputTglSelesai').value;
-            const resultBox = document.getElementById('quotaCheckResult');
-            const btnCheck = document.getElementById('btnPerformQuotaCheck');
-
-            if (!divisiId) {
-                alert('Silakan pilih salah satu divisi tujuan magang terlebih dahulu pada langkah 1.');
-                document.getElementById('inputDivisi')?.scrollIntoView({ behavior: 'smooth' });
-                return;
-            }
-
-            if (!tglMulai || !tglSelesai) {
-                alert('Silakan lengkapi tanggal mulai dan tanggal selesai magang.');
-                return;
-            }
-
-            if (tglSelesai < tglMulai) {
-                alert('Tanggal selesai magang harus sama dengan atau setelah tanggal mulai.');
-                return;
-            }
-
-            btnCheck.disabled = true;
-            btnCheck.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Mengecek Kuota...</span>';
-
-            resultBox.className = 'p-4 rounded-xl text-xs transition border bg-gray-50 border-gray-200 text-gray-600 flex items-center gap-2.5';
-            resultBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm text-gray-700"></i> <span>Memeriksa ketersediaan kuota divisi...</span>';
-            resultBox.classList.remove('hidden');
-
-            fetch("{{ route('pendaftaran.check_quota', [], false) }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    divisi_id: divisiId,
-                    tanggal_mulai: tglMulai,
-                    tanggal_selesai: tglSelesai,
-                    jumlah_orang: 1
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                btnCheck.disabled = false;
-                btnCheck.innerHTML = '<i class="fa-solid fa-magnifying-glass-chart"></i> <span>Cek Ketersediaan Kuota</span>';
-
-                if (!data.success) {
-                    resultBox.className = 'p-4 rounded-xl text-xs transition border bg-rose-50 border-rose-200 text-rose-800';
-                    resultBox.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-600 mr-1.5"></i> Gagal memeriksa ketersediaan kuota.';
-                    resetQuotaCheckedStatus();
-                    return;
-                }
-
-                const res = data.data;
-                currentQuotaCheck = res;
-
-                // 1. Render Status Utama Periode yang Dipilih
-                let statusHeaderHtml = '';
-                if (res.tersedia) {
-                    statusHeaderHtml = `
-                        <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                            <div class="flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
-                                    <i class="fa-solid fa-check"></i>
-                                </div>
-                                <div>
-                                    <strong class="text-sm font-bold block text-emerald-950">Kuota Tersedia untuk Periode Ini!</strong>
-                                    <p class="text-xs text-emerald-800 mt-0.5 leading-relaxed">
-                                        Divisi ini memiliki kapasitas sisa minimal <strong>${res.sisa_kuota_minimal} Kursi</strong> pada tanggal yang Anda pilih. Anda dapat melanjutkan pengisian data dan mendaftar mandiri maupun kelompok.
-                                    </p>
-                                </div>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-200/80 text-emerald-900 shrink-0 self-start sm:self-auto border border-emerald-300">
-                                Sisa ${res.sisa_kuota_minimal} Kursi
-                            </span>
-                        </div>
-                    `;
-
-                    // Buka form kelompok
-                    document.getElementById('kelompokLockedNotice')?.classList.add('hidden');
-                    document.getElementById('kelompokActiveSection')?.classList.remove('hidden');
-                    document.getElementById('textKapasitasTersedia').textContent = `${res.sisa_kuota_minimal} Kursi`;
-
-                    validateKelompokQuota();
-                } else {
-                    const tglPenuhList = (res.tanggal_penuh || []).map(t => t.tanggal_format || t.tanggal).slice(0, 5).join(', ');
-                    statusHeaderHtml = `
-                        <div class="p-4 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 flex flex-col sm:flex-row sm:items-start justify-between gap-3 shadow-2xs">
-                            <div class="flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
-                                    <i class="fa-solid fa-triangle-exclamation"></i>
-                                </div>
-                                <div>
-                                    <strong class="text-sm font-bold block text-rose-950">Kuota Padat / Penuh Pada Periode Ini!</strong>
-                                    <p class="text-xs text-rose-800 mt-1 leading-relaxed">
-                                        Kuota divisi telah terisi penuh pada beberapa tanggal dalam rentang pilihan Anda: <strong>${tglPenuhList}</strong>.
-                                    </p>
-                                    <p class="text-[11px] text-rose-700 mt-1">
-                                        Silakan pilih rentang tanggal lain atau divisi lain yang masih memiliki kapasitas kuota kosong.
-                                    </p>
-                                </div>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-200 text-rose-900 shrink-0 self-start sm:self-auto border border-rose-300">
-                                Kuota Habis
-                            </span>
-                        </div>
-                    `;
-
-                    // Kunci form kelompok
-                    document.getElementById('kelompokActiveSection')?.classList.add('hidden');
-                    document.getElementById('kelompokLockedNotice')?.classList.remove('hidden');
-
-                    const submitBtn = document.getElementById('btnSubmitPendaftaran');
-                    if (submitBtn) {
-                        submitBtn.disabled = true;
-                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                    }
-                }
-
-                resultBox.className = 'space-y-3 pt-2';
-                resultBox.innerHTML = statusHeaderHtml;
-            })
-            .catch(err => {
-                btnCheck.disabled = false;
-                btnCheck.innerHTML = '<i class="fa-solid fa-magnifying-glass-chart"></i> <span>Cek Ketersediaan Kuota</span>';
-                resultBox.className = 'p-3.5 rounded-xl text-xs transition border bg-gray-50 border-gray-200 text-gray-500';
-                resultBox.innerHTML = '<i class="fa-solid fa-circle-info mr-1"></i> Tidak dapat memeriksa kuota saat ini. Silakan coba kembali.';
-            });
         }
 
         // ================= VALIDASI KUOTA ANGGOTA KELOMPOK =================
@@ -2087,17 +2208,12 @@
         function resetFormPendaftaranFull() {
             addedMembers = [];
             currentQuotaCheck = null;
+            currentSelectedDivisiId = null;
+            const input = document.getElementById('inputDivisi');
+            if (input) input.value = '';
             renderAnggotaList();
             updateFormState();
-
-            document.querySelectorAll('.divisi-select-card').forEach(card => {
-                card.classList.remove('border-gray-900', 'bg-white', 'shadow-sm', 'ring-2', 'ring-gray-900/10');
-                card.classList.add('border-gray-200', 'bg-[#fafafa]');
-                const icon = card.querySelector('.divisi-check-icon');
-                if (icon) icon.className = 'fa-solid fa-circle-check text-gray-300 text-sm divisi-check-icon';
-            });
-            const badge = document.getElementById('selectedDivisiBadge');
-            if (badge) badge.textContent = 'Pilih salah satu divisi di bawah';
+            backToPilihDivisi();
         }
 
         function openRejectRescheduleModal() {

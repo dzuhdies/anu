@@ -16,17 +16,20 @@ class Division extends Model
         'description',
         'quota',
         'is_active',
+        'activities',
     ];
 
     protected $casts = [
         'quota' => 'integer',
         'is_active' => 'boolean',
+        'activities' => 'array',
     ];
 
     protected $appends = [
         'nama_divisi',
         'deskripsi',
         'kuota',
+        'aktivitas_list',
     ];
 
     public function applications(): HasMany
@@ -113,6 +116,79 @@ class Division extends Model
     public function getTerisiSaatIniAttribute(): int
     {
         return $this->getCurrentOccupiedAttribute();
+    }
+
+    public function getAktivitasListAttribute(): array
+    {
+        $raw = $this->activities;
+        if (is_string($raw)) {
+            $raw = json_decode($raw, true);
+        }
+        if (!empty($raw) && is_array($raw)) {
+            return array_values(array_filter(array_map('trim', $raw)));
+        }
+        return $this->getDefaultActivities();
+    }
+
+    public function getDefaultActivities(): array
+    {
+        $lowerName = strtolower($this->name ?? '');
+        if (str_contains($lowerName, 'ipds') || str_contains($lowerName, 'integrasi')) {
+            return [
+                'Pengembangan dan pemeliharaan website/sistem informasi internal BPS.',
+                'Perancangan visualisasi data interaktif, dashboard analitik, dan infografis publikasi.',
+                'Pengelolaan basis data hasil survei dan integrasi data sensus statistik.',
+                'Pelayanan konsultasi data statistik di Pelayanan Statistik Terpadu (PST) dan Pojok Statistik.',
+                'Dukungan jaringan, pemeliharaan perangkat keras, dan keamanan sistem informasi kantor.'
+            ];
+        } elseif (str_contains($lowerName, 'sosial')) {
+            return [
+                'Validasi, konsistensi, dan entri dokumen survei sosial ekonomi (Susenas dan Sakernas).',
+                'Penyusunan tabulasi data kemiskinan, ketimpangan pengeluaran (Gini Ratio), dan IPM.',
+                'Pengolahan indikator ketenagakerjaan, upah buruh, serta statistik gender dan pendidikan.',
+                'Penyusunan draft publikasi profil statistik kependudukan dan sosial Kota Malang.',
+                'Pemeriksaan kelengkapan berkas kuesioner pendataan lapangan.'
+            ];
+        } elseif (str_contains($lowerName, 'produksi')) {
+            return [
+                'Pemutakhiran direktori perusahaan industri manufaktur skala besar, sedang, dan mikro/kecil.',
+                'Pengolahan data survei statistik pertanian tanaman pangan, hortikultura, dan peternakan.',
+                'Pencatatan dan verifikasi data survei perusahaan konstruksi dan bahan galian.',
+                'Penyusunan laporan indeks produksi industri manufaktur dan profil komoditas daerah.',
+                'Rekapitulasi dan pelaporan berkas bulanan data produksi unggulan daerah.'
+            ];
+        } elseif (str_contains($lowerName, 'distribusi')) {
+            return [
+                'Pencatatan dan pengolahan Survei Harga Konsumen (SHK) untuk perhitungan inflasi Kota Malang.',
+                'Pendataan statistik pariwisata dan Tingkat Penghunian Kamar (TPK) hotel.',
+                'Verifikasi data survei perdagangan besar, eceran, logistik, dan jasa transportasi.',
+                'Penyusunan materi rilis Berita Resmi Statistik (BRS) inflasi dan pariwisata.',
+                'Analisis pergerakan harga komoditas strategis di pasar rakyat dan pasar modern.'
+            ];
+        } elseif (str_contains($lowerName, 'nerwilis') || str_contains($lowerName, 'neraca')) {
+            return [
+                'Penyusunan dan penghitungan PDRB Kota Malang menurut lapangan usaha dan pengeluaran.',
+                'Analisis pertumbuhan ekonomi, struktur ekonomi daerah, dan PDRB per kapita.',
+                'Kompilasi dan rekonsiliasi data sekunder dari dinas dan instansi terkait.',
+                'Penyusunan draft publikasi Analisis Indikator Makroekonomi Kota Malang.',
+                'Pembuatan model analisis keterkaitan antar sektor ekonomi daerah.'
+            ];
+        } elseif (str_contains($lowerName, 'umum') || str_contains($lowerName, 'tata usaha') || str_contains($lowerName, 'tu')) {
+            return [
+                'Tata kelola administrasi persuratan dinas, registrasi naskah masuk/keluar, dan arsip digital.',
+                'Dukungan administrasi kepegawaian dan absensi/presensi aparatur BPS.',
+                'Inventarisasi dan pengelolaan aset Barang Milik Negara (BMN).',
+                'Keprotokolan rapat/acara resmi, dokumentasi kegiatan, dan kehumasan kantor.',
+                'Penyusunan kelengkapan administrasi keuangan dan SPJ kegiatan dinas.'
+            ];
+        }
+
+        return [
+            'Pendataan dan verifikasi dokumen teknis operasional statistik.',
+            'Pengolahan dan entri data menggunakan sistem aplikasi BPS.',
+            'Penyusunan tabulasi berkas dan rekapitulasi data kegiatan.',
+            'Dukungan administrasi dan laporan progres kerja harian.'
+        ];
     }
 
     /**

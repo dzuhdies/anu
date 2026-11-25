@@ -396,11 +396,18 @@ class AdminController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
+        $aktivitasInput = $request->input('aktivitas', []);
+        $aktivitas = [];
+        if (is_array($aktivitasInput)) {
+            $aktivitas = array_values(array_filter(array_map('trim', $aktivitasInput)));
+        }
+
         $divisi = Division::create([
             'name' => $request->nama_divisi,
             'description' => $request->deskripsi,
             'quota' => (int) $request->kuota,
             'is_active' => true,
+            'activities' => $aktivitas,
         ]);
 
         LogHelper::success($request, 'Tambah Divisi Berhasil', "Admin menambahkan divisi baru: {$divisi->nama_divisi} dengan kuota {$divisi->kuota}");
@@ -431,11 +438,18 @@ class AdminController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
+        $aktivitasInput = $request->input('aktivitas', []);
+        $aktivitas = [];
+        if (is_array($aktivitasInput)) {
+            $aktivitas = array_values(array_filter(array_map('trim', $aktivitasInput)));
+        }
+
         $divisi->update([
             'name' => $request->nama_divisi,
             'description' => $request->deskripsi,
             'quota' => (int) $request->kuota,
             'is_active' => $request->boolean('is_active'),
+            'activities' => $aktivitas,
         ]);
 
         LogHelper::success($request, 'Update Divisi Berhasil', "Admin memperbarui divisi: {$divisi->nama_divisi}");
