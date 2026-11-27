@@ -1421,6 +1421,18 @@
                     <div class="space-y-4">
                         @foreach($historyMagang as $hIndex => $hist)
                         <div class="card p-6 bg-white space-y-5 border border-gray-100 hover:border-gray-200 transition shadow-2xs">
+                            @if($hist->status === 'rejected')
+                            <!-- Notifikasi Penolakan Pendaftaran (Hanya kalimat penolakan) -->
+                            <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-1.5 text-xs text-rose-950">
+                                <div class="flex items-center gap-2 font-bold text-rose-900">
+                                    <i class="fa-solid fa-circle-xmark text-rose-600"></i>
+                                    <span>Permohonan Pendaftaran Magang Ditolak</span>
+                                </div>
+                                <p class="text-[11px] text-rose-800 leading-relaxed">
+                                    Mohon maaf, pengajuan pendaftaran magang Anda pada divisi <strong>{{ $hist->divisi?->nama_divisi ?? 'Divisi BPS' }}</strong> untuk periode <strong>{{ $hist->tanggal_mulai ? $hist->tanggal_mulai->translatedFormat('d F Y') : '-' }} - {{ $hist->tanggal_selesai ? $hist->tanggal_selesai->translatedFormat('d F Y') : '-' }}</strong> ini belum dapat disetujui, Anda dapat mengajukan pendaftaran baru melalui tombol <strong>Daftar Magang Baru</strong>.
+                                </p>
+                            </div>
+                            @else
                             <!-- Card Header -->
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
                                 <div class="flex items-center gap-3">
@@ -1430,11 +1442,7 @@
                                     <div>
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <h4 class="text-sm font-bold text-gray-900">{{ $hist->divisi?->nama_divisi ?? 'Divisi BPS' }}</h4>
-                                            @if($hist->status === 'rejected')
-                                            <span class="text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                                                <i class="fa-solid fa-circle-xmark text-[10px]"></i> Pendaftaran Ditolak
-                                            </span>
-                                            @elseif($hist->status === 'terminated')
+                                            @if($hist->status === 'terminated')
                                             <span class="text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                                                 <i class="fa-solid fa-user-xmark text-[10px]"></i> Diberhentikan
                                             </span>
@@ -1457,9 +1465,7 @@
                                         </div>
                                         <p class="text-[11px] text-gray-400 mt-0.5">
                                             Badan Pusat Statistik Kota Malang &bull;
-                                            @if($hist->status === 'rejected')
-                                                Diajukan pada {{ $hist->created_at ? $hist->created_at->translatedFormat('d F Y') : '-' }}
-                                            @elseif($hist->status === 'terminated')
+                                            @if($hist->status === 'terminated')
                                                 Diberhentikan pada {{ $hist->updated_at ? $hist->updated_at->translatedFormat('d F Y') : '-' }}
                                             @elseif($hist->status === 'resigned')
                                                 Mengundurkan diri pada {{ $hist->updated_at ? $hist->updated_at->translatedFormat('d F Y') : '-' }}
@@ -1473,21 +1479,9 @@
                                 </div>
 
                                 <div class="text-left sm:text-right">
-                                    <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block">Durasi Pengajuan</span>
+                                    <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block">Durasi Magang</span>
                                     <strong class="text-xs text-gray-800 font-bold block">{{ $hist->durasi_hari }} Hari Kalender</strong>
                                 </div>
-                            </div>
-
-                            @if($hist->status === 'rejected')
-                            <!-- Notifikasi Penolakan Pendaftaran -->
-                            <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-1.5 text-xs text-rose-950">
-                                <div class="flex items-center gap-2 font-bold text-rose-900">
-                                    <i class="fa-solid fa-circle-xmark text-rose-600"></i>
-                                    <span>Permohonan Pendaftaran Magang Ditolak</span>
-                                </div>
-                                <p class="text-[11px] text-rose-800 leading-relaxed">
-                                    Mohon maaf, pengajuan pendaftaran magang Anda pada divisi <strong>{{ $hist->divisi?->nama_divisi ?? 'Divisi BPS' }}</strong> untuk periode <strong>{{ $hist->tanggal_mulai ? $hist->tanggal_mulai->translatedFormat('d F Y') : '-' }} - {{ $hist->tanggal_selesai ? $hist->tanggal_selesai->translatedFormat('d F Y') : '-' }}</strong> ini belum dapat disetujui, Anda dapat mengajukan pendaftaran baru melalui <strong>Formulir Magang</strong>.
-                                </p>
                             </div>
                             @endif
 
