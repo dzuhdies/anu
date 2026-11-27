@@ -103,7 +103,7 @@
         <div class="absolute top-0 right-0 w-1/3 h-full bg-bps-50/40 -skew-x-12 translate-x-1/4 -z-10"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                <div class="lg:col-span-6 space-y-8 text-center lg:text-left">
+                <div class="lg:col-span-6 space-y-8 text-center lg:text-left order-2 lg:order-1">
                     <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-bps-100 text-bps-800 text-xs font-extrabold uppercase tracking-widest animate-pulse">
                         🎯 Pendaftaran Batch 2024 Dibuka
                     </div>
@@ -131,15 +131,15 @@
                         <p class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Bergabunglah dengan<br><span class="text-slate-900">Alumni Magang Sukses Kami</span></p>
                     </div>
                 </div>
-                <div class="hidden lg:block lg:col-span-6 relative">
+                <div class="lg:col-span-6 relative order-1 lg:order-2">
                     <div class="relative rounded-[2.5rem] overflow-hidden shadow-2xl transition-transform duration-700 hover:scale-[1.02]">
                         <img src="{{ asset('fotogedung.webp') }}" alt="Kolaborasi Magang" class="w-full h-64 sm:h-80 lg:h-[450px] object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-bps-900/40 via-transparent to-transparent"></div>
                         <div class="absolute bottom-8 left-8 right-8">
-                            <div class="glass-card p-6 rounded-3xl border border-white/50 shadow-2xl">
+                            <!--<div class="glass-card p-6 rounded-3xl border border-white/50 shadow-2xl">
                                 <p class="text-xs font-black text-bps-700 uppercase mb-1">Bangunan Kantor</p>
                                 <p class="text-lg font-bold text-slate-900">BPS Kota Malang</p>
-                            </div>
+                            </div>-->
                         </div>
                     </div>
                     <!-- Decorative element -->

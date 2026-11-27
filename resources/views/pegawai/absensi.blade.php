@@ -265,12 +265,6 @@
 
                                 {{ $divisiPegawai ? $divisiPegawai->nama_divisi : 'Semua Divisi' }}
                             </span>
-                        @if($sisaKuotaHariIni > 0)
-                        <div class="pt-2 px-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
-                            <span class="font-semibold text-[10px] uppercase">Sisa Kuota Hari Ini</span>
-                            <span class="text-[11px] font-bold text-emerald-600">{{ $sisaKuotaHariIni }} Kursi</span>
-                        </div>
-                        @endif
                         </div>
                         <div class="pt-2 border-t border-gray-50">
                             <span class="text-gray-400 block text-[10px] uppercase font-semibold">Lokasi Gedung</span>
