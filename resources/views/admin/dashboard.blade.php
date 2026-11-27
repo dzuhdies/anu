@@ -8,8 +8,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { 
-            font-family: 'Inter', sans-serif; 
+        body {
+            font-family: 'Inter', sans-serif;
             background-color: #ffffff;
             margin: 0;
             padding: 0;
@@ -21,7 +21,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
-        
+
         /* Container utama frame aplikasi */
         .app-container {
             width: 100vw;
@@ -37,7 +37,7 @@
             border-radius: 0.875rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.03);
         }
-        
+
         /* Progress bar styles */
         .progress-track { background-color: #f3f4f6; height: 6px; border-radius: 999px; width: 100%; }
         .progress-fill { height: 100%; border-radius: 999px; }
@@ -187,7 +187,7 @@
 <body class="bg-white h-screen overflow-hidden">
 
     <div class="app-container">
-        
+
         <!-- ================= SIDEBAR (KARNIVA STYLE) ================= -->
         <aside id="main-sidebar" class="w-[250px] bg-[#fafafa] border-r border-gray-100 flex flex-col shrink-0 fixed md:static inset-y-0 left-0 z-40 -translate-x-full md:translate-x-0 transition-transform duration-200">
             <!-- Brand / Logo BPS Kota Malang -->
@@ -337,7 +337,7 @@
 
         <!-- ================= MAIN CONTENT (KARNIVA STYLE) ================= -->
         <main class="flex-1 flex flex-col bg-[#fbfcfd] overflow-hidden">
-            
+
             <!-- Top Header -->
             <header class="h-16 flex items-center justify-between px-4 sm:px-8 border-b border-gray-100 border-dashed shrink-0 bg-white">
                 <!-- Breadcrumbs & Mobile Trigger -->
@@ -352,7 +352,7 @@
                 </div>
 
                 <!-- Right Actions -->
-                <div class="flex items-center gap-2 sm:gap-3">  
+                <div class="flex items-center gap-2 sm:gap-3">
                     <button onclick="showMainContent('pendaftaran')" title="Lihat Pendaftaran"
                         class="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:text-black bg-white relative transition">
                         <i class="fa-regular fa-bell text-sm"></i>
@@ -483,6 +483,53 @@
 
                 <!-- ================= VIEW 1: PENDAFTARAN & SELEKSI MAGANG ================= -->
                 <div id="main-content-pendaftaran" class="main-content-view space-y-4">
+                <!-- ================= DIVISION QUOTA CAROUSEL ================= -->
+                <div id="quota-carousel-section" class="mb-6">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-teal-600"></i>
+                            Kapasitas Kuota Divisi
+                        </h3>
+                        <div class="flex gap-1">
+                            <button onclick="document.getElementById('quota-carousel').scrollBy({left: -200, behavior: 'smooth'})" class="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-black shadow-sm">
+                                <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                            </button>
+                            <button onclick="document.getElementById('quota-carousel').scrollBy({left: 200, behavior: 'smooth'})" class="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-black shadow-sm">
+                                <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="quota-carousel" class="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x snap-mandatory scroll-smooth">
+                        @foreach($divisis as $div)
+                        @php
+                            $terisiCount = $div->terisi_saat_ini;
+                            $kuotaMax = max(1, $div->kuota);
+                            $percentage = min(100, round(($terisiCount / $kuotaMax) * 100));
+                            $isFull = $terisiCount >= $div->kuota;
+                        @endphp
+                        <div class="flex-none w-[200px] sm:w-[240px] snap-start">
+                            <div class="card p-4 bg-white border border-gray-100 hover:border-teal-200 transition-colors shadow-sm relative overflow-hidden">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase truncate pr-2">{{ $div->nama_divisi }}</span>
+                                    <i class="fa-solid fa-circle text-[6px] {{ $isFull ? 'text-rose-500' : 'text-emerald-500' }}"></i>
+                                </div>
+                                <div class="flex items-end justify-between mb-2">
+                                    <div class="text-xl font-black text-gray-900">
+                                        {{ $terisiCount }}<span class="text-gray-300 text-sm font-medium">/{{ $div->kuota }}</span>
+                                    </div>
+                                    <div class="text-[10px] font-bold {{ $isFull ? 'text-rose-600' : 'text-teal-600' }}">
+                                        {{ $percentage }}%
+                                    </div>
+                                </div>
+                                <div class="progress-track bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                    <div class="progress-fill h-full rounded-full {{ $isFull ? 'bg-rose-500' : ($percentage >= 80 ? 'bg-amber-500' : 'bg-teal-500') }}" style="width: {{ $percentage }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
                     <div class="card overflow-hidden">
                         <!-- Card Header & Filter -->
                         <div class="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white">
@@ -2659,22 +2706,22 @@
             const groupName = item.nama_kelompok || item.group_name || '';
             const leaderName = members[0]?.nama_lengkap || members[0]?.full_name || leader?.username || 'Peserta';
 
-            titleEl.textContent = isKelompok 
-                ? `Rincian Pendaftaran: ${groupName || 'Kelompok'}` 
+            titleEl.textContent = isKelompok
+                ? `Rincian Pendaftaran: ${groupName || 'Kelompok'}`
                 : `Rincian Pendaftaran: ${leaderName}`;
 
             let anggotasHtml = '';
             members.forEach((anggota, idx) => {
                 let cvUrl = null;
                 if (anggota.cv_path) {
-                    cvUrl = anggota.cv_path.startsWith('http') 
-                        ? anggota.cv_path 
+                    cvUrl = anggota.cv_path.startsWith('http')
+                        ? anggota.cv_path
                         : (anggota.cv_path.startsWith('storage/') ? `{{ url('/') }}/${anggota.cv_path}` : `{{ asset('storage') }}/${anggota.cv_path}`);
                 }
                 let portoUrl = null;
                 if (anggota.portofolio_path) {
-                    portoUrl = anggota.portofolio_path.startsWith('http') 
-                        ? anggota.portofolio_path 
+                    portoUrl = anggota.portofolio_path.startsWith('http')
+                        ? anggota.portofolio_path
                         : (anggota.portofolio_path.startsWith('storage/') ? `{{ url('/') }}/${anggota.portofolio_path}` : `{{ asset('storage') }}/${anggota.portofolio_path}`);
                 }
 
@@ -2801,8 +2848,8 @@
             } else if (item.status === 'resignation_requested') {
                 let buktiBtn = '';
                 if (buktiUndurDiri) {
-                    let buktiUrl = buktiUndurDiri.startsWith('http') 
-                        ? buktiUndurDiri 
+                    let buktiUrl = buktiUndurDiri.startsWith('http')
+                        ? buktiUndurDiri
                         : (buktiUndurDiri.startsWith('storage/') ? `{{ url('/') }}/${buktiUndurDiri}` : `{{ asset('storage') }}/${buktiUndurDiri}`);
                     buktiBtn = `
                         <div class="pt-2">
