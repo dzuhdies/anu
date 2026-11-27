@@ -435,7 +435,7 @@
                     </div>
 
                     @else
-                    @if(isset($historyMagang) && $historyMagang->isNotEmpty())
+                    @if(isset($historyMagang) && $historyMagang->contains(fn($h) => $h->status === 'completed' || ($h->status === 'approved' && $h->end_date && $h->end_date->lt(now()->startOfDay()))))
                     <!-- Banner Alumni Magang BPS -->
                     <div class="card p-4 bg-gradient-to-r from-teal-50 via-emerald-50 to-teal-50 border border-teal-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                         <div class="flex items-center gap-3">
@@ -800,7 +800,7 @@
                         <div class="max-w-md mx-auto">
                             <h3 class="text-sm font-bold text-gray-900">Tidak Ada Permohonan Aktif</h3>
                             <p class="text-xs text-gray-400 mt-1 leading-relaxed">
-                                @if(isset($historyMagang) && $historyMagang->isNotEmpty())
+                                @if(isset($historyMagang) && $historyMagang->contains(fn($h) => $h->status === 'completed' || ($h->status === 'approved' && $h->end_date && $h->end_date->lt(now()->startOfDay()))))
                                 Anda telah menyelesaikan program magang di BPS Kota Malang. Anda dapat membuka tab <strong>Riwayat Magang (History)</strong> untuk melihat arsip kegiatan Anda, atau membuat permohonan magang baru melalui formulir.
                                 @else
                                 Anda belum mengirimkan permohonan pendaftaran magang yang sedang aktif. Silakan lengkapi formulir pendaftaran untuk mengajukan jadwal dan divisi magang di BPS.
@@ -811,7 +811,7 @@
                             <button type="button" onclick="switchTab('pendaftaran')" class="px-4 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-black transition">
                                 Buka Formulir Magang
                             </button>
-                            @if(isset($historyMagang) && $historyMagang->isNotEmpty())
+                            @if(isset($historyMagang) && $historyMagang->contains(fn($h) => $h->status === 'completed' || ($h->status === 'approved' && $h->end_date && $h->end_date->lt(now()->startOfDay()))))
                             <button type="button" onclick="switchTab('history')" class="px-4 py-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition flex items-center gap-1.5">
                                 <span>Buka Riwayat Magang</span>
                             </button>
@@ -1385,9 +1385,6 @@
                         </div>
                         <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="flex items-start gap-3.5">
-                                <div class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xs text-amber-400 flex items-center justify-center font-bold text-xl shrink-0 border border-white/10">
-                                    <i class="fa-solid fa-award"></i>
-                                </div>
                                 <div class="space-y-1">
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <h3 class="text-base font-bold text-white tracking-tight">Riwayat Kegiatan Magang</h3>
@@ -1398,12 +1395,6 @@
                                 </div>
                             </div>
 
-                            @if(isset($historyMagang) && $historyMagang->isNotEmpty())
-                            <button type="button" onclick="switchTab('pendaftaran')" class="px-4 py-2.5 rounded-xl bg-white text-gray-900 font-bold text-xs hover:bg-gray-100 transition shadow-xs shrink-0 flex items-center justify-center gap-2 self-start sm:self-auto">
-                                <i class="fa-solid fa-plus text-xs"></i>
-                                <span>Daftar Magang Baru</span>
-                            </button>
-                            @endif
                         </div>
                     </div>
 
@@ -1414,9 +1405,9 @@
                             <i class="fa-solid fa-graduation-cap"></i>
                         </div>
                         <div class="max-w-md mx-auto">
-                            <h3 class="text-sm font-bold text-gray-900">Belum Ada Riwayat Magang yang Selesai</h3>
+                            <h3 class="text-sm font-bold text-gray-900">Belum Ada Riwayat Kegiatan Magang</h3>
                             <p class="text-xs text-gray-400 mt-1 leading-relaxed">
-                                Riwayat magang akan otomatis tersimpan di halaman ini setelah seluruh masa periode kegiatan magang Anda di BPS Kota Malang telah resmi selesai.
+                                Seluruh riwayat pengajuan dan kegiatan magang Anda (pendaftaran ditolak, pengunduran diri, pemberhentian, hingga selesai magang) akan tercatat di halaman ini.
                             </p>
                         </div>
                         <div class="flex items-center justify-center gap-2.5">
@@ -1426,7 +1417,7 @@
                         </div>
                     </div>
                     @else
-                    <!-- List Riwayat Magang Selesai -->
+                    <!-- List Riwayat Pengajuan & Kegiatan Magang -->
                     <div class="space-y-4">
                         @foreach($historyMagang as $hIndex => $hist)
                         <div class="card p-6 bg-white space-y-5 border border-gray-100 hover:border-gray-200 transition shadow-2xs">
@@ -1439,13 +1430,21 @@
                                     <div>
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <h4 class="text-sm font-bold text-gray-900">{{ $hist->divisi?->nama_divisi ?? 'Divisi BPS' }}</h4>
-                                            @if($hist->status === 'terminated')
+                                            @if($hist->status === 'rejected')
+                                            <span class="text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                                <i class="fa-solid fa-circle-xmark text-[10px]"></i> Pendaftaran Ditolak
+                                            </span>
+                                            @elseif($hist->status === 'terminated')
                                             <span class="text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                                                 <i class="fa-solid fa-user-xmark text-[10px]"></i> Diberhentikan
                                             </span>
                                             @elseif($hist->status === 'resigned')
                                             <span class="text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                                                 <i class="fa-solid fa-person-walking-dashed-line-arrow-right text-[10px]"></i> Mengundurkan Diri
+                                            </span>
+                                            @elseif($hist->status === 'approved' && $hist->tanggal_selesai && $hist->tanggal_selesai->gte(now()->startOfDay()))
+                                            <span class="text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                                <i class="fa-solid fa-spinner text-[10px]"></i> Aktif Magang
                                             </span>
                                             @else
                                             <span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
@@ -1457,16 +1456,40 @@
                                             </span>
                                         </div>
                                         <p class="text-[11px] text-gray-400 mt-0.5">
-                                            Badan Pusat Statistik Kota Malang &bull; Diselesaikan pada {{ $hist->tanggal_selesai ? $hist->tanggal_selesai->translatedFormat('d F Y') : '-' }}
+                                            Badan Pusat Statistik Kota Malang &bull;
+                                            @if($hist->status === 'rejected')
+                                                Diajukan pada {{ $hist->created_at ? $hist->created_at->translatedFormat('d F Y') : '-' }}
+                                            @elseif($hist->status === 'terminated')
+                                                Diberhentikan pada {{ $hist->updated_at ? $hist->updated_at->translatedFormat('d F Y') : '-' }}
+                                            @elseif($hist->status === 'resigned')
+                                                Mengundurkan diri pada {{ $hist->updated_at ? $hist->updated_at->translatedFormat('d F Y') : '-' }}
+                                            @elseif($hist->status === 'approved' && $hist->tanggal_selesai && $hist->tanggal_selesai->gte(now()->startOfDay()))
+                                                Periode {{ $hist->tanggal_mulai ? $hist->tanggal_mulai->translatedFormat('d F Y') : '-' }} s.d. {{ $hist->tanggal_selesai ? $hist->tanggal_selesai->translatedFormat('d F Y') : '-' }}
+                                            @else
+                                                Diselesaikan pada {{ $hist->tanggal_selesai ? $hist->tanggal_selesai->translatedFormat('d F Y') : '-' }}
+                                            @endif
                                         </p>
                                     </div>
                                 </div>
 
                                 <div class="text-left sm:text-right">
-                                    <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block">Durasi Magang</span>
+                                    <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block">Durasi Pengajuan</span>
                                     <strong class="text-xs text-gray-800 font-bold block">{{ $hist->durasi_hari }} Hari Kalender</strong>
                                 </div>
                             </div>
+
+                            @if($hist->status === 'rejected')
+                            <!-- Notifikasi Penolakan Pendaftaran -->
+                            <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-1.5 text-xs text-rose-950">
+                                <div class="flex items-center gap-2 font-bold text-rose-900">
+                                    <i class="fa-solid fa-circle-xmark text-rose-600"></i>
+                                    <span>Permohonan Pendaftaran Magang Ditolak</span>
+                                </div>
+                                <p class="text-[11px] text-rose-800 leading-relaxed">
+                                    Mohon maaf, pengajuan pendaftaran magang Anda pada divisi <strong>{{ $hist->divisi?->nama_divisi ?? 'Divisi BPS' }}</strong> untuk periode <strong>{{ $hist->tanggal_mulai ? $hist->tanggal_mulai->translatedFormat('d F Y') : '-' }} - {{ $hist->tanggal_selesai ? $hist->tanggal_selesai->translatedFormat('d F Y') : '-' }}</strong> ini belum dapat disetujui, Anda dapat mengajukan pendaftaran baru melalui <strong>Formulir Magang</strong>.
+                                </p>
+                            </div>
+                            @endif
 
                             @if($hist->status === 'terminated')
                             <!-- Notifikasi Pemberhentian oleh Pegawai/Admin -->
@@ -1487,7 +1510,7 @@
                             </div>
                             @endif
 
-                            @if($hist->certificate && !in_array($hist->status, ['resigned', 'terminated']))
+                            @if($hist->certificate && !in_array($hist->status, ['resigned', 'terminated', 'rejected']) && ($hist->status === 'completed' || ($hist->tanggal_selesai && $hist->tanggal_selesai->lt(now()->startOfDay()))))
                             <!-- Sertifikat Resmi Kelulusan Magang -->
                             <div class="p-4 bg-gradient-to-r from-teal-50 via-emerald-50 to-teal-50 border border-teal-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
                                 <div class="flex items-start gap-3">
@@ -1566,48 +1589,20 @@
                             </div>
                             @endif
 
+                            @if($hist->status !== 'rejected')
                             <!-- Grid Rincian -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                                 <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
                                     <span class="text-gray-400 text-[10px] uppercase font-semibold block">Periode Pelaksanaan</span>
                                     <strong class="text-gray-900 text-xs flex items-center gap-1.5 mt-0.5">
-
                                         {{ $hist->tanggal_mulai ? $hist->tanggal_mulai->format('d/m/Y') : '-' }} - {{ $hist->tanggal_selesai ? $hist->tanggal_selesai->format('d/m/Y') : '-' }}
                                     </strong>
                                 </div>
-                                <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                    <span class="text-gray-400 text-[10px] uppercase font-semibold block">Peserta / Rekan Tim</span>
-                                    <strong class="text-gray-900 text-xs flex items-center gap-1.5 mt-0.5">
-
-                                        {{ $hist->anggotas->count() }} Orang Peserta
-                                    </strong>
-                                </div>
                             </div>
-
-                            <!-- Anggota Tim -->
-                            <div>
-                                <h5 class="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                    Daftar Peserta Magang:
-                                </h5>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    @foreach($hist->anggotas as $ang)
-                                    <div class="p-2.5 rounded-xl border border-gray-100 bg-[#fbfcfd] flex items-center justify-between text-xs">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-6 h-6 rounded-full bg-gray-900 text-white font-bold text-[10px] flex items-center justify-center">
-                                                {{ $loop->iteration }}
-                                            </div>
-                                            <div>
-                                                <strong class="text-gray-900 block leading-tight">{{ $ang->nama_lengkap }}</strong>
-                                                <span class="text-[10px] text-gray-500">{{ $ang->asal_univ }} &bull; {{ $ang->jurusan }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </div>
+                            @endif
 
                             <!-- Statistik Presensi & Riwayat Kehadiran (Jika Ada) -->
-                            @if(isset($historyAbsensiStats) && $historyAbsensiStats['total_hari'] > 0)
+                            @if($hist->status !== 'rejected' && isset($historyAbsensiStats) && $historyAbsensiStats['total_hari'] > 0)
                             <div class="pt-3 border-t border-gray-100 space-y-3">
                                 <div class="flex items-center justify-between">
                                     <h5 class="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -1675,7 +1670,12 @@
                             </div>
                             @endif
 
-                            <!-- Pesan Apresiasi Resmi BPS -->
+                            @php
+                                $isCompletedMagang = $hist->status === 'completed' || ($hist->status === 'approved' && $hist->tanggal_selesai && $hist->tanggal_selesai->lt(now()->startOfDay()));
+                                $pesanApresiasi = $studentProfile?->final_message ?? Auth::user()->studentProfile?->final_message;
+                            @endphp
+                            @if($isCompletedMagang && !empty(trim((string) $pesanApresiasi)))
+                            <!-- Pesan Apresiasi Resmi BPS (Hanya jika selesai magang & diisi pegawai) -->
                             <div class="p-4 bg-gradient-to-r from-teal-50/60 via-emerald-50/40 to-teal-50/60 border border-teal-100 rounded-2xl flex items-start gap-3 text-xs">
                                 <div class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold shrink-0 mt-0.5 shadow-2xs">
                                     <i class="fa-solid fa-ribbon text-xs"></i>
@@ -1683,10 +1683,11 @@
                                 <div>
                                     <strong class="text-teal-950 font-bold block mb-0.5">Apresiasi dari BPS Kota Malang</strong>
                                     <p class="text-teal-900 text-[11px] leading-relaxed">
-                                        {{ ($studentProfile?->final_message ?? (Auth::user()->studentProfile?->final_message)) ?: 'Terima kasih banyak atas dedikasi, kedisiplinan, dan kontribusi nyata Anda selama melaksanakan program Praktik Kerja Lapangan / Magang di Badan Pusat Statistik Kota Malang. Semoga ilmu dan pengalaman yang didapatkan membawa manfaat bagi masa depan karir dan akademik Anda!' }}
+                                        {{ $pesanApresiasi }}
                                     </p>
                                 </div>
                             </div>
+                            @endif
                         </div>
                         @endforeach
                     </div>

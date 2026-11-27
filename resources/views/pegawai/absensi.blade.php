@@ -434,11 +434,26 @@
                     <!-- Stats Cards Pendaftaran -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div class="card p-4">
-                            <span class="text-xs text-gray-400 block mb-1">Total Permohonan</span>
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-xl sm:text-2xl font-bold text-gray-900">{{ $pendaftarans->count() }}</span>
-                                <span class="text-xs text-gray-500">Berkas</span>
-                            </div>
+                            <span class="text-xs text-gray-400 block mb-1">Sisa Kuota Divisi</span>
+                            @if($divisiPegawai)
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-xl sm:text-2xl font-bold {{ $sisaKuotaHariIni > 0 ? 'text-emerald-600' : 'text-rose-600' }}">{{ $sisaKuotaHariIni }}</span>
+                                    <span class="text-xs text-gray-500">/ {{ $divisiPegawai->kuota }} Kursi</span>
+                                </div>
+                                <div class="text-[11px] mt-1 font-medium {{ $sisaKuotaHariIni > 0 ? 'text-emerald-600' : 'text-amber-700' }}">
+                                    @if($sisaKuotaHariIni > 0)
+                                        <i class="fa-solid fa-circle-check text-[10px]"></i> Tersedia hari ini
+                                    @elseif(!empty($tanggalKuotaTersediaLagi))
+                                        <i class="fa-regular fa-calendar text-[10px]"></i> Tersedia lagi: {{ \Carbon\Carbon::parse($tanggalKuotaTersediaLagi)->translatedFormat('d M Y') }}
+                                    @else
+                                        <i class="fa-solid fa-circle-xmark text-[10px]"></i> Kuota Penuh
+                                    @endif
+                                </div>
+                            @else
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-xl sm:text-2xl font-bold text-gray-400">-</span>
+                                </div>
+                            @endif
                         </div>
                         <div class="card p-4">
                             <span class="text-xs text-gray-400 block mb-1">Menunggu Review</span>
@@ -554,8 +569,7 @@
                                         </td>
 
                                         <td data-label="Divisi" class="px-6 py-4 font-semibold text-gray-800">
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-teal-50 text-teal-800 text-xs border border-teal-100">
-                                                <i class="fa-solid fa-sitemap text-teal-600 text-[10px]"></i>
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-black-800 text-xs">
                                                 {{ $p->divisi->nama_divisi }}
                                             </span>
                                         </td>
@@ -1434,12 +1448,8 @@
                         @endif
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Alasan Penolakan *</label>
-                    <textarea name="catatan_admin" id="rejectCatatan" rows="3" required
-                        class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-gray-900 bg-white"
-                        placeholder="Misal: Kuota telah terpenuhi atau kualifikasi berkas belum sesuai..."></textarea>
-                    <p class="text-[11px] text-gray-400 mt-1">Catatan ini akan tampil di dashboard calon peserta.</p>
+                <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl text-xs text-rose-900 leading-relaxed">
+                    Apakah Anda yakin ingin menolak permohonan pendaftaran magang ini?
                 </div>
 
                 <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
@@ -3136,7 +3146,8 @@
             const form = document.getElementById('formRejectPendaftaran');
             form.action = `/pendaftaran/${id}/reject`;
             document.getElementById('rejectModalSub').textContent = `Pendaftaran: ${title}`;
-            document.getElementById('rejectCatatan').value = '';
+            const catatanEl = document.getElementById('rejectCatatan');
+            if (catatanEl) catatanEl.value = '';
             showModal('pendaftaranRejectModal');
         }
 

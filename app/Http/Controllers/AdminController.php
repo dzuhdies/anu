@@ -95,12 +95,13 @@ class AdminController extends Controller
             'asal_pkl' => 'required_if:role,siswa|nullable|string|max:255',
             'jurusan' => 'nullable|string|max:255',
             'gedung_id' => 'required_if:role,siswa,pegawai|nullable|exists:buildings,id',
-            'divisi_id' => 'nullable|exists:divisions,id',
+            'divisi_id' => 'required_if:role,pegawai|nullable|exists:divisions,id',
         ], [
             'nama_lengkap.required_if' => 'Nama lengkap wajib diisi untuk pengguna ini.',
             'asal_pkl.required_if' => 'Asal sekolah / instansi wajib diisi untuk siswa PKL.',
             'gedung_id.required_if' => 'Gedung penempatan wajib dipilih.',
             'gedung_id.exists' => 'Gedung yang dipilih tidak valid.',
+            'divisi_id.required_if' => 'Divisi penugasan wajib dipilih untuk pegawai.',
             'divisi_id.exists' => 'Divisi yang dipilih tidak valid.',
         ]);
 
@@ -162,12 +163,13 @@ class AdminController extends Controller
             'asal_pkl' => ['required_if:role,siswa', 'nullable', 'string', 'max:255'],
             'jurusan' => ['nullable', 'string', 'max:255'],
             'gedung_id' => ['required_if:role,siswa,pegawai', 'nullable', 'exists:buildings,id'],
-            'divisi_id' => ['nullable', 'exists:divisions,id'],
+            'divisi_id' => ['required_if:role,pegawai', 'nullable', 'exists:divisions,id'],
         ], [
             'nama_lengkap.required_if' => 'Nama lengkap wajib diisi.',
             'asal_pkl.required_if' => 'Asal sekolah / kampus wajib diisi untuk siswa PKL.',
             'gedung_id.required_if' => 'Gedung penempatan wajib dipilih.',
             'gedung_id.exists' => 'Gedung yang dipilih tidak valid.',
+            'divisi_id.required_if' => 'Divisi penugasan wajib dipilih untuk pegawai.',
             'divisi_id.exists' => 'Divisi yang dipilih tidak valid.',
         ]);
 

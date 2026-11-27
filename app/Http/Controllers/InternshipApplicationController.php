@@ -78,20 +78,21 @@ class InternshipApplicationController extends Controller
         $pendaftaran = $application;
         $anggotaRecord = $memberRecord;
 
-        // 3. Ambil Seluruh Riwayat Magang (History)
+        // 3. Ambil Seluruh Riwayat Pengajuan & Kegiatan Magang (History)
         $historyMagang = InternshipApplication::where(function ($q) use ($user) {
                 $q->where('leader_user_id', $user->id)
                   ->orWhereHas('members', fn($sub) => $sub->where('user_id', $user->id));
             })
             ->where(function ($q) use ($today) {
-                $q->whereIn('status', ['completed', 'resigned', 'terminated'])
+                $q->whereIn('status', ['completed', 'resigned', 'terminated', 'rejected'])
+                  ->orWhereNotNull('resignation_history')
                   ->orWhere(function ($sub) use ($today) {
                       $sub->where('status', 'approved')
                           ->whereDate('end_date', '<', $today);
                   });
             })
             ->with(['division', 'members.user.participantProfile', 'leader', 'certificate'])
-            ->latest('end_date')
+            ->latest('updated_at')
             ->get();
 
         $studentProfile = $user->studentProfile;

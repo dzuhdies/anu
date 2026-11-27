@@ -239,6 +239,45 @@ class Division extends Model
     }
 
     /**
+     * Find the earliest date (Y-m-d) when at least 1 quota slot becomes available.
+     */
+    public function getEarliestAvailableDate(): ?string
+    {
+        if ($this->quota <= 0) {
+            return null;
+        }
+
+        $todayStr = now()->toDateString();
+        if ($this->getOccupiedOnDate($todayStr) < $this->quota) {
+            return $todayStr;
+        }
+
+        $appEndDates = $this->applications()
+            ->where('status', 'approved')
+            ->where('end_date', '>=', $todayStr)
+            ->pluck('end_date');
+
+        $studentEndDates = $this->studentProfiles()
+            ->where('end_date', '>=', $todayStr)
+            ->pluck('end_date');
+
+        $candidateDates = $appEndDates->merge($studentEndDates)
+            ->filter()
+            ->map(fn ($d) => Carbon::parse($d)->addDay()->toDateString())
+            ->unique()
+            ->sort()
+            ->values();
+
+        foreach ($candidateDates as $candDate) {
+            if ($this->getOccupiedOnDate($candDate) < $this->quota) {
+                return $candDate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Check availability for a date range.
      */
     public function checkAvailability(string $startDateStr, string $endDateStr, int $headCount = 1): array

@@ -496,14 +496,17 @@ class EmployeeController extends Controller
         $gedung = $building;
         $divisiPegawai = $employeeDivision;
 
-        // Hitung sisa kuota hari ini untuk divisi pegawai (agar mudah dibaca di sidebar)
+        // Hitung sisa kuota hari ini & tanggal paling awal kuota tersedia lagi untuk divisi pegawai
         $sisaKuotaHariIni = 0;
+        $tanggalKuotaTersediaLagi = null;
         if ($divisiPegawai) {
             $sisaKuotaHariIni = $divisiPegawai->getRemainingQuotaAttribute();
+            $tanggalKuotaTersediaLagi = $divisiPegawai->getEarliestAvailableDate();
         }
 
         return view('pegawai.absensi', compact(
             'sisaKuotaHariIni',
+            'tanggalKuotaTersediaLagi',
             'siswas',
             'all_siswas',
             'tanggal',
