@@ -248,8 +248,7 @@
                         <li>
                             <button onclick="showMainContent('history'); closeSidebarMobile();" id="side-nav-history"
                                 class="sidebar-nav-link w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                                <span class="flex items-center gap-3"><i class="fa-solid fa-clock-rotate-left w-4 text-center text-teal-600"></i> History</span>
-                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">{{ count($historyStudents ?? []) }}</span>
+                                <span class="flex items-center gap-3"><i class="fa-solid fa-clock-rotate-left w-4 text-center text-black-600"></i> History</span>
                             </button>
                         </li>
                     </ul>
@@ -808,8 +807,8 @@
                                                         'nama' => $siswa->nama_lengkap,
                                                         'username' => $siswa->user?->username ?? '-',
                                                         'email' => $siswa->user?->email ?? '-',
-                                                        'asal' => $pProfile?->asal_univ ?? ($siswa->asal_pkl ?? '-'),
-                                                        'jurusan' => $pProfile?->jurusan ?? '-',
+                                                        'asal' => $siswa->asal_pkl ?? ($pProfile?->asal_univ ?? '-'),
+                                                        'jurusan' => $siswa->major ?? ($pProfile?->jurusan ?? '-'),
                                                         'no_hp' => $pProfile?->no_hp ?? '-',
                                                         'divisi' => $siswa->divisi?->nama_divisi ?? '-',
                                                         'gedung' => $siswa->gedung?->nama ?? ($gedung->nama ?? 'Kantor BPS'),
@@ -852,17 +851,12 @@
                                                 <tr class="hover:bg-gray-50/70 transition-colors search-row">
                                                     <td data-label="Siswa" class="px-6 py-4">
                                                         <div class="flex items-center gap-3">
-                                                            <button type="button" onclick="openDetailMagangModal(this)" data-siswa="{{ $b64Siswa }}"
-                                                                class="w-8 h-8 rounded-lg bg-gray-900 hover:bg-blue-600 text-white font-bold flex items-center justify-center text-xs shrink-0 transition shadow-2xs" title="Lihat Detail Magang Siswa">
+                                                            <div class="w-8 h-8 rounded-lg bg-gray-900 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs">
                                                                 {{ strtoupper(substr($siswa->nama_lengkap, 0, 1)) }}
-                                                            </button>
+                                                            </div>
                                                             <div>
-                                                                <button type="button" onclick="openDetailMagangModal(this)" data-siswa="{{ $b64Siswa }}"
-                                                                    class="font-bold text-gray-900 hover:text-blue-600 transition flex items-center gap-1.5 text-left" title="Buka Rincian Magang Siswa">
-                                                                    <span>{{ $siswa->nama_lengkap }}</span>
-                                                                    <i class="fa-solid fa-circle-info text-[10px] text-gray-300 hover:text-blue-500"></i>
-                                                                </button>
-                                                                <div class="text-[11px] text-gray-400">{{ $siswa->asal_pkl ?? '-' }}</div>
+                                                                <div class="font-bold text-gray-900">{{ $siswa->nama_lengkap }}</div>
+
                                                             </div>
                                                         </div>
                                                     </td>
@@ -950,8 +944,8 @@
                                                             'nama' => $siswa->nama_lengkap,
                                                             'username' => $siswa->user?->username ?? '-',
                                                             'email' => $siswa->user?->email ?? '-',
-                                                            'asal' => $pProfile?->asal_univ ?? ($siswa->asal_pkl ?? '-'),
-                                                            'jurusan' => $pProfile?->jurusan ?? '-',
+                                                            'asal' => $siswa->asal_pkl ?? ($pProfile?->asal_univ ?? '-'),
+                                                            'jurusan' => $siswa->major ?? ($pProfile?->jurusan ?? '-'),
                                                             'no_hp' => $pProfile?->no_hp ?? '-',
                                                             'divisi' => $siswa->divisi?->nama_divisi ?? '-',
                                                             'gedung' => $siswa->gedung?->nama ?? ($gedung->nama ?? 'Kantor BPS'),
@@ -994,16 +988,11 @@
                                                     <tr class="hover:bg-gray-50/70 transition-colors search-row">
                                                         <td data-label="Siswa" class="px-6 py-4">
                                                             <div class="flex items-center gap-3">
-                                                                <button type="button" onclick="openDetailMagangModal(this)" data-siswa="{{ $b64Siswa }}"
-                                                                    class="w-8 h-8 rounded-lg bg-gray-900 hover:bg-blue-600 text-white font-bold flex items-center justify-center text-xs shrink-0 transition shadow-2xs" title="Lihat Detail Magang Siswa">
+                                                                <div class="w-8 h-8 rounded-lg bg-gray-900 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs">
                                                                     {{ strtoupper(substr($siswa->nama_lengkap, 0, 1)) }}
-                                                                </button>
+                                                                </div>
                                                                 <div>
-                                                                    <button type="button" onclick="openDetailMagangModal(this)" data-siswa="{{ $b64Siswa }}"
-                                                                        class="font-bold text-gray-900 hover:text-blue-600 transition flex items-center gap-1.5 text-left" title="Buka Rincian Magang Siswa">
-                                                                        <span>{{ $siswa->nama_lengkap }}</span>
-                                                                        <i class="fa-solid fa-circle-info text-[10px] text-gray-300 hover:text-blue-500"></i>
-                                                                    </button>
+                                                                    <div class="font-bold text-gray-900">{{ $siswa->nama_lengkap }}</div>
                                                                     <div class="text-[11px] text-gray-400">{{ $siswa->asal_pkl ?? '-' }}</div>
                                                                 </div>
                                                             </div>
@@ -1110,8 +1099,8 @@
                                             'nama' => $sw->nama_lengkap,
                                             'username' => $sw->user?->username ?? '-',
                                             'email' => $sw->user?->email ?? '-',
-                                            'asal' => $swProfile?->asal_univ ?? ($sw->asal_pkl ?? '-'),
-                                            'jurusan' => $swProfile?->jurusan ?? '-',
+                                            'asal' => $sw->asal_pkl ?? ($swProfile?->asal_univ ?? '-'),
+                                            'jurusan' => $sw->major ?? ($swProfile?->jurusan ?? '-'),
                                             'no_hp' => $swProfile?->no_hp ?? '-',
                                             'divisi' => $sw->divisi?->nama_divisi ?? '-',
                                             'gedung' => $sw->gedung?->nama ?? ($gedung->nama ?? 'Kantor BPS'),
@@ -1151,7 +1140,6 @@
 
                                         <td data-label="Divisi" class="px-6 py-4">
                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-teal-50 text-teal-800 text-xs border border-teal-100 font-semibold">
-                                                <i class="fa-solid fa-sitemap text-teal-600 text-[10px]"></i>
                                                 {{ $sw->divisi->nama_divisi ?? '-' }}
                                             </span>
                                         </td>
@@ -1874,7 +1862,8 @@
                         <div class="bg-gray-50 border border-gray-100 rounded-xl p-2 flex flex-col items-center">
                             <span class="text-[10px] font-medium text-gray-500 mb-1.5">Foto Masuk</span>
                             <div class="w-full aspect-[4/3] rounded-lg overflow-hidden bg-gray-200 relative group cursor-pointer" onclick="zoomModalImage('fotoMasuk')">
-                                <img id="modalImgMasuk" src="" alt="Foto Masuk" class="w-full h-full object-cover">
+                                <img id="modalImgMasuk" src="" alt="Foto Masuk" class="w-full h-full object-cover"
+                                    onerror="this.classList.add('hidden'); document.getElementById('modalImgMasukEmpty')?.classList.remove('hidden');">
                                 <div id="modalImgMasukEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-100 text-xs">
                                     <i class="fa-regular fa-image text-lg mb-1"></i>
                                     <span>Tidak Ada Foto</span>
@@ -1889,7 +1878,8 @@
                         <div class="bg-gray-50 border border-gray-100 rounded-xl p-2 flex flex-col items-center">
                             <span class="text-[10px] font-medium text-gray-500 mb-1.5">Foto Pulang</span>
                             <div class="w-full aspect-[4/3] rounded-lg overflow-hidden bg-gray-200 relative group cursor-pointer" onclick="zoomModalImage('fotoKeluar')">
-                                <img id="modalImgKeluar" src="" alt="Foto Keluar" class="w-full h-full object-cover">
+                                <img id="modalImgKeluar" src="" alt="Foto Keluar" class="w-full h-full object-cover"
+                                    onerror="this.classList.add('hidden'); document.getElementById('modalImgKeluarEmpty')?.classList.remove('hidden');">
                                 <div id="modalImgKeluarEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-100 text-xs">
                                     <i class="fa-regular fa-image text-lg mb-1"></i>
                                     <span>Belum Pulang</span>

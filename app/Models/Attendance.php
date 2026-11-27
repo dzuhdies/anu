@@ -99,18 +99,30 @@ class Attendance extends Model
     }
 
     // Accessors & Mutators
+    protected function resolvePhotoUrl(?string $photo): ?string
+    {
+        if (!$photo) return null;
+        $clean = ltrim($photo, '/');
+        if (str_starts_with($clean, 'http://') || str_starts_with($clean, 'https://')) {
+            return $photo;
+        }
+        if (str_starts_with($clean, 'storage/')) {
+            return asset($clean);
+        }
+        if (!str_starts_with($clean, 'absen/')) {
+            $clean = 'absen/' . $clean;
+        }
+        return asset('storage/' . $clean);
+    }
+
     public function getCheckInPhotoUrlAttribute(): ?string
     {
-        $photo = $this->attributes['check_in_photo'] ?? null;
-        if (!$photo) return null;
-        return asset('storage/' . $photo);
+        return $this->resolvePhotoUrl($this->attributes['check_in_photo'] ?? null);
     }
 
     public function getCheckOutPhotoUrlAttribute(): ?string
     {
-        $photo = $this->attributes['check_out_photo'] ?? null;
-        if (!$photo) return null;
-        return asset('storage/' . $photo);
+        return $this->resolvePhotoUrl($this->attributes['check_out_photo'] ?? null);
     }
 
     public function getWorkDurationAttribute(): ?string

@@ -93,6 +93,7 @@ class AdminController extends Controller
             'role' => 'required|in:siswa,pegawai,admin',
             'nama_lengkap' => 'required_if:role,siswa,pegawai|nullable|string|max:255',
             'asal_pkl' => 'required_if:role,siswa|nullable|string|max:255',
+            'jurusan' => 'nullable|string|max:255',
             'gedung_id' => 'required_if:role,siswa,pegawai|nullable|exists:buildings,id',
             'divisi_id' => 'nullable|exists:divisions,id',
         ], [
@@ -125,6 +126,7 @@ class AdminController extends Controller
                 'user_id' => $user->id,
                 'full_name' => $namaLengkap,
                 'institution' => $request->asal_pkl,
+                'major' => $request->jurusan,
                 'building_id' => $gedungId,
             ]);
         } else if ($request->role === 'pegawai') {
@@ -158,6 +160,7 @@ class AdminController extends Controller
             'password' => ['nullable', 'string', 'min:6'],
             'nama_lengkap' => ['required_if:role,siswa,pegawai', 'nullable', 'string', 'max:255'],
             'asal_pkl' => ['required_if:role,siswa', 'nullable', 'string', 'max:255'],
+            'jurusan' => ['nullable', 'string', 'max:255'],
             'gedung_id' => ['required_if:role,siswa,pegawai', 'nullable', 'exists:buildings,id'],
             'divisi_id' => ['nullable', 'exists:divisions,id'],
         ], [
@@ -186,6 +189,7 @@ class AdminController extends Controller
             $siswaData = [
                 'full_name' => $request->nama_lengkap,
                 'institution' => $request->asal_pkl,
+                'major' => $request->jurusan,
                 'building_id' => $request->gedung_id,
             ];
             if ($request->filled('tanggal_mulai')) {
@@ -376,7 +380,6 @@ class AdminController extends Controller
         return back()->with('success', 'Fitur logbook berhasil ' . ($enabled === '1' ? 'diaktifkan' : 'dinonaktifkan') . '.');
     }
 
-    // ================= DIVISI MANAGEMENT =================
     public function storeDivisi(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -477,7 +480,6 @@ class AdminController extends Controller
         return back()->with('success', "Divisi berhasil dihapus.");
     }
 
-    // ================= PENDAFTARAN MAGANG SELEKSI =================
     public function approvePendaftaran(Request $request, $id)
     {
         $pendaftaran = InternshipApplication::with(['divisi', 'anggotas.user'])->findOrFail($id);
@@ -561,7 +563,8 @@ class AdminController extends Controller
                         ['user_id' => $user->id],
                         [
                             'full_name' => $anggota->full_name ?? $anggota->nama_lengkap,
-                            'institution' => ($anggota->institution ?? $anggota->asal_univ) . ($anggota->major ? ' - ' . $anggota->major : ''),
+                            'institution' => $anggota->institution ?? $anggota->asal_univ,
+                            'major' => $anggota->major ?? null,
                             'building_id' => $defaultGedung ? $defaultGedung->id : 1,
                             'division_id' => $pendaftaran->division_id ?? $pendaftaran->divisi_id,
                             'start_date' => $pendaftaran->start_date ?? $pendaftaran->tanggal_mulai,

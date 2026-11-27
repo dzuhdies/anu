@@ -142,7 +142,7 @@
                         <tr>
                             <td colspan="6" class="px-6 py-12 text-center text-gray-400">
                                 <i class="fa-solid fa-user-clock text-3xl mb-2 text-gray-300"></i>
-                                <p class="text-xs">Belum ada riwayat siswa magang yang tercatat.</p>
+                                <p class="text-xs">Belum ada riwayat magang yang tercatat.</p>
                             </td>
                         </tr>
                     @endforelse

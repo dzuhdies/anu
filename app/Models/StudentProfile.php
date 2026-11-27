@@ -14,6 +14,7 @@ class StudentProfile extends Model
         'user_id',
         'full_name',
         'institution',
+        'major',
         'building_id',
         'division_id',
         'start_date',
@@ -30,6 +31,7 @@ class StudentProfile extends Model
         // Backward-compatibility
         'nama_lengkap',
         'asal_pkl',
+        'jurusan',
         'gedung_id',
         'divisi_id',
         'tanggal_mulai',
@@ -151,6 +153,9 @@ class StudentProfile extends Model
 
     public function getAsalPklAttribute() { return $this->attributes['institution'] ?? null; }
     public function setAsalPklAttribute($v) { $this->attributes['institution'] = $v; }
+
+    public function getJurusanAttribute() { return $this->attributes['major'] ?? null; }
+    public function setJurusanAttribute($v) { $this->attributes['major'] = $v; }
 
     public function getGedungIdAttribute() { return $this->attributes['building_id'] ?? null; }
     public function setGedungIdAttribute($v) { $this->attributes['building_id'] = $v; }

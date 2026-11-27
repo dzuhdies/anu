@@ -797,7 +797,10 @@
                                                 </div>
                                             </td>
                                             <td data-label="Asal PKL" class="px-6 py-3.5 font-medium text-gray-700 searchable-text">
-                                                {{ $user->siswaProfile->asal_pkl ?? '-' }}
+                                                <div>{{ $user->siswaProfile->asal_pkl ?? '-' }}</div>
+                                                @if(!empty($user->siswaProfile?->major))
+                                                    <div class="text-[11px] text-gray-400 font-normal">{{ $user->siswaProfile->major }}</div>
+                                                @endif
                                             </td>
                                             <td data-label="Gedung" class="px-6 py-3.5 searchable-text">
                                                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] border border-amber-200">
@@ -811,7 +814,7 @@
                                                         $rawStart = $user->siswaProfile?->start_date ? \Carbon\Carbon::parse($user->siswaProfile->start_date)->format('Y-m-d') : '';
                                                         $rawEnd = $user->siswaProfile?->end_date ? \Carbon\Carbon::parse($user->siswaProfile->end_date)->format('Y-m-d') : '';
                                                     @endphp
-                                                    <button onclick="openEditUser('{{ route('admin.users.update', $user->id) }}','{{ $user->username }}','{{ $user->role }}','{{ $user->siswaProfile->nama_lengkap ?? '' }}','{{ $user->siswaProfile->asal_pkl ?? '' }}','{{ $user->siswaProfile->gedung_id ?? '' }}','','{{ $rawStart }}','{{ $rawEnd }}')"
+                                                    <button onclick="openEditUser('{{ route('admin.users.update', $user->id) }}','{{ $user->username }}','{{ $user->role }}','{{ addslashes($user->siswaProfile->nama_lengkap ?? '') }}','{{ addslashes($user->siswaProfile->asal_pkl ?? '') }}','{{ $user->siswaProfile->gedung_id ?? '' }}','','{{ $rawStart }}','{{ $rawEnd }}','{{ addslashes($user->siswaProfile->major ?? '') }}')"
                                                         class="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 text-gray-600 transition" title="Edit Siswa / Ubah Periode Magang">
                                                         <i class="fa-solid fa-pen text-xs"></i>
                                                     </button>
@@ -1376,6 +1379,10 @@
                         <input type="text" name="asal_pkl" value="{{ old('asal_pkl') }}" class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white" placeholder="Contoh: SMKN 1 / Universitas" disabled>
                     </div>
                     <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Jurusan / Program Studi</label>
+                        <input type="text" name="jurusan" value="{{ old('jurusan') }}" class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white" placeholder="Contoh: Teknik Informatika" disabled>
+                    </div>
+                    <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Gedung Presensi</label>
                         <select name="gedung_id" class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white" disabled>
                             @foreach ($gedungs as $gedung)
@@ -1492,6 +1499,10 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Asal Sekolah / Kampus</label>
                         <input type="text" name="asal_pkl" id="editSiswaAsal" class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Jurusan / Program Studi</label>
+                        <input type="text" name="jurusan" id="editSiswaJurusan" class="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white">
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                         <div>
@@ -2587,7 +2598,7 @@
             }
         }
 
-        function openEditUser(actionUrl, username, role, nama_lengkap, asal_pkl, gedung_id, divisi_id = '', tanggal_mulai = '', tanggal_selesai = '') {
+        function openEditUser(actionUrl, username, role, nama_lengkap, asal_pkl, gedung_id, divisi_id = '', tanggal_mulai = '', tanggal_selesai = '', jurusan = '') {
             const modal = document.getElementById('userEditModal');
             modal.querySelector('#editUserForm').action = actionUrl;
             modal.querySelector('#editUserUsername').value = username;
@@ -2597,6 +2608,8 @@
             if (role === 'siswa') {
                 document.getElementById('editSiswaNama').value = nama_lengkap;
                 document.getElementById('editSiswaAsal').value = asal_pkl;
+                const jurusanEl = document.getElementById('editSiswaJurusan');
+                if (jurusanEl) jurusanEl.value = jurusan || '';
                 const tglMulaiEl = document.getElementById('editSiswaTanggalMulai');
                 const tglSelesaiEl = document.getElementById('editSiswaTanggalSelesai');
                 if (tglMulaiEl) tglMulaiEl.value = tanggal_mulai || '';

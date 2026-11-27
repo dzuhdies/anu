@@ -859,7 +859,8 @@ class InternshipApplicationController extends Controller
                         ['user_id' => $memberUser->id],
                         [
                             'full_name' => $member->full_name,
-                            'institution' => $member->institution . ($member->major ? ' - ' . $member->major : ''),
+                            'institution' => $member->institution,
+                            'major' => $member->major,
                             'building_id' => $defaultBuilding ? $defaultBuilding->id : 1,
                             'division_id' => $application->division_id,
                             'start_date' => $startDateStr,
